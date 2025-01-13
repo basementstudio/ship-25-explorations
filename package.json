@@ -1,0 +1,83 @@
+{
+  "name": "ogl-starter",
+  "version": "0.1.0",
+  "description": "A starter for OGL projects",
+  "repository": "https://github.com/basementstudio/ogl-starter",
+  "author": "basement.studio",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "build:analyze": "cross-env ANALYZE=true pnpm build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@gsap/react": "^2.1.1",
+    "@next/bundle-analyzer": "^14.2.13",
+    "@radix-ui/react-portal": "^1.1.1",
+    "@typescript-eslint/eslint-plugin": "^8.6.0",
+    "@typescript-eslint/parser": "^8.6.0",
+    "clsx": "^2.1.1",
+    "debounce": "^2.1.1",
+    "detect-gpu": "^5.0.48",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.2.1",
+    "eslint-plugin-simple-import-sort": "^12.1.1",
+    "glsl-noise": "^0.0.0",
+    "glslify": "^7.1.1",
+    "gsap": "^3.12.5",
+    "its-fine": "^1.2.5",
+    "leva": "0.9.28",
+    "lodash-es": "^4.17.21",
+    "mousetrap": "^1.6.5",
+    "nanoid": "^5.0.7",
+    "next": "14.2.13",
+    "next-transpile-modules": "^10.0.1",
+    "ogl": "^1.0.8",
+    "react": "^18",
+    "react-device-detect": "^2.2.3",
+    "react-dom": "^18",
+    "react-ogl": "^0.14.2",
+    "react-use": "^17.5.1",
+    "stats.js": "^0.17.0",
+    "tailwind-merge": "^2.5.2",
+    "tiny-emitter": "^2.1.0",
+    "tunnel-rat": "^0.1.2",
+    "zustand": "5.0.0-rc.2"
+  },
+  "devDependencies": {
+    "@types/lodash-es": "^4.17.12",
+    "@types/mousetrap": "^1.6.15",
+    "@types/node": "^22.5.5",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "@types/stats.js": "^0.17.3",
+    "eslint": "^8",
+    "eslint-config-next": "14.2.13",
+    "glslify-loader": "^2.0.0",
+    "postcss": "^8",
+    "postcss-hover-media-feature": "^1.0.2",
+    "postcss-nested": "^6.0.1",
+    "prettier-plugin-glsl": "^0.2.0",
+    "raw-loader": "^4.0.2",
+    "tailwindcss": "^3.4.1",
+    "typescript": "^5",
+    "typescript-plugin-css-modules": "^5.1.0"
+  },
+  "browserslist": [
+    ">0.2%",
+    "not dead",
+    "not ie <= 11",
+    "not op_mini all"
+  ],
+  "packageManager": "pnpm@9.11.0",
+  "engines": {
+    "node": "20.x"
+  },
+  "pnpm": {
+    "patchedDependencies": {
+      "react-ogl@0.14.2": "patches/react-ogl@0.14.2.patch"
+    }
+  }
+}

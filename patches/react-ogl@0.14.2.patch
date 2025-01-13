@@ -1,0 +1,26 @@
+diff --git a/dist/reconciler.mjs b/dist/reconciler.mjs
+index ddeeed45c2bac90c2f12de7f5bbc4ceb4e4bde73..28220c0097cb038de65ffa52d0cf36564e0f9a94 100644
+--- a/dist/reconciler.mjs
++++ b/dist/reconciler.mjs
+@@ -298,7 +298,7 @@ const reconciler = Reconciler({
+   detachDeletedInstance: () => {
+   }
+ });
+-const act = "unstable_act" in React ? React.unstable_act : React.act;
++const act = "unstable_act" in React ? React?.unstable_act : React?.act;
+ const isProd = typeof process === "undefined" || ((_a = process.env) == null ? void 0 : _a["NODE_ENV"]) === "production";
+ reconciler.injectIntoDevTools({
+   findFiberByHostInstance: () => null,
+diff --git a/dist/types.d.ts b/dist/types.d.ts
+index 7d25381ea4012a3758330e74463fc2ff6bdf707a..c623efd6b68d6d4187696cc29bb1b180a6094f59 100644
+--- a/dist/types.d.ts
++++ b/dist/types.d.ts
+@@ -128,7 +128,7 @@ declare type OGLExports = typeof OGL;
+ declare type OGLElementsImpl = {
+     [K in keyof OGLExports as Uncapitalize<K>]: OGLExports[K] extends ConstructorRepresentation ? OGLElement<OGLExports[K]> : never;
+ };
+-declare type ColorNames = 'black' | 'white' | 'red' | 'green' | 'blue' | 'fuchsia' | 'cyan' | 'yellow' | 'orange';
++declare type ColorNames = string;
+ declare type UniformValue = ColorNames | number | number[] | OGL.Texture | OGL.Texture[];
+ declare type UniformRepresentation = UniformValue | {
+     [structName: string]: UniformValue;
