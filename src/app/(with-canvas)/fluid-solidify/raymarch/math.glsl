@@ -1,9 +1,6 @@
 const float pi = 3.1415926535897932384626433832795;
 const float goldenAngle = pi * (3.0 - sqrt(5.0)); // Golden angle in radians
 const float diskSize = 80.0;
-const int diskSamples = 100;
-const float minSize = 20.0;
-const float maxSize = 300.0;
 
 vec3 rand(vec2 uv) {
   return vec3(
@@ -17,7 +14,7 @@ vec2 getVogel(float diskSize, float i, float totalSamples, float rotation) {
   float cosAngle = cos(rotation);
   float sinAngle = sin(rotation);
 
-  float r = diskSize * sqrt(float(i) / float(diskSamples));
+  float r = diskSize * sqrt(float(i) / float(totalSamples));
   float theta = float(i) * goldenAngle;
 
   vec2 offset;
