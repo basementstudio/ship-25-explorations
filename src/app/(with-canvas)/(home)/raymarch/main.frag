@@ -1,10 +1,11 @@
 precision highp float;
 
 #pragma glslify: cnoise = require('glsl-noise/classic/2d')
+#pragma glslify: cnoise3d = require('glsl-noise/classic/3d')
 
 #define MAX_STEPS (300)
 #define SURFACE_DIST (0.001)
-#define MAX_DISTANCE (7.0)
+#define MAX_DISTANCE (20.0)
 
 uniform vec3 cPos;
 uniform vec4 cameraQuaternion;
@@ -12,6 +13,7 @@ uniform float fov;
 uniform float uTime;
 uniform vec2 resolution;
 uniform vec2 mousePos;
+
 varying vec2 vUv;
 varying vec3 vWorldPos;
 varying vec3 vPosition;
@@ -19,9 +21,16 @@ varying vec3 vPosition;
 #pragma glslify: structsModule = require('./structs.glsl', Material=Material, RayHit=RayHit, CastedRay=CastedRay, RayLightResult=RayLightResult, SurfaceResult=SurfaceResult)
 #pragma glslify: booleanModule = require('./boolean-fn.glsl', opSmoothUnion=opSmoothUnion, RayHit=RayHit, Material=Material)
 #pragma glslify: transformsModule = require('./transforms.glsl', Translate=Translate)
-#pragma glslify: sdfModule = require('./distance-fn.glsl', sdSphere=sdSphere, sdBox=sdBox)
+#pragma glslify: sdfModule = require('./distance-fn.glsl', sdSphere=sdSphere, sdBox=sdBox, sdPlane=sdPlane)
 
 float getSceneHit(vec3 p) {
+  // vec3 floorP = Translate(
+  //   p,
+  //   vec3(0.0, 0.0, cnoise3d(vec3(p.xy * 2.0, uTime) * 0.3) * 0.3)
+  // );
+  // float floorPlane = sdPlane(floorP, vec4(0.0, 0.0, 1.0, 2.0));
+  // return floorPlane;
+
   float ball1 = sdSphere(Translate(p, vec3(0.0, 0.0, 0.0)), 1.0);
 
   vec2 boxPos = mousePos * 2.0 - 1.0;

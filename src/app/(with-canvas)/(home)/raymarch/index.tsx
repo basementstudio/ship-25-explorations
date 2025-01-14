@@ -1,7 +1,7 @@
 "use client"
 
 import { folder as levaFolder, useControls } from "leva"
-import { TextureLoader, Vec2 } from "ogl"
+import { Color, Program, TextureLoader, Vec2 } from "ogl"
 import { useEffect, useRef } from "react"
 import { useFrame, useLoader, useOGL } from "react-ogl"
 
@@ -18,15 +18,44 @@ export function BackgroundGradient() {
     animatedMousePos: new Vec2(0, 0)
   })
 
-  const [uniforms] = useControls(() => ({
+  const matcap = useLoader(TextureLoader, "/textures/matcap-1.png")
+  const reflection = useLoader(
+    TextureLoader,
+    "/textures/studio_small_02_1k.png"
+  )
+
+  const defaultColor = "#3b3b3b"
+
+  const uniformsRef = useRef({
+    mainColor: { value: new Color(defaultColor) },
+    cPos: { value: [0, 0, 4] },
+    cameraQuaternion: { value: [0, 0, 0, 1] },
+    fov: { value: 45 },
+    matcapMap: { value: matcap },
+    reflectionMap: { value: reflection },
+    resolution: { value: vRefs.current.resolution },
+    mousePos: { value: vRefs.current.animatedMousePos },
+    reflectionIntensity: { value: 1 },
+    uTime: { value: 0 }
+  } satisfies Record<string, any>)
+
+  useControls(() => ({
     Raymarch: levaFolder(
       {
-        mainColor: "#3b3b3b",
+        mainColor: {
+          value: defaultColor,
+          onChange: (value) => {
+            uniformsRef.current.mainColor.value.set(value)
+          }
+        },
         reflectionIntensity: {
-          value: 0.8,
+          value: 1,
           min: 0,
           max: 1,
-          step: 0.01
+          step: 0.01,
+          onChange: (value) => {
+            uniformsRef.current.reflectionIntensity.value = value
+          }
         }
       },
       {
@@ -35,11 +64,8 @@ export function BackgroundGradient() {
     )
   }))
 
-  const matcap = useLoader(TextureLoader, "/textures/matcap-1.png")
-  const reflection = useLoader(
-    TextureLoader,
-    "/textures/studio_small_02_1k.png"
-  )
+  const programRef = useRef<Program>(null)
+
   const canvas = useOGL((state) => state.gl.canvas)
 
   useEffect(() => {
@@ -68,7 +94,7 @@ export function BackgroundGradient() {
     return () => controller.abort()
   }, [canvas])
 
-  useFrame(() => {
+  useFrame((state, time) => {
     vRefs.current.animatedMousePos.x = lerp(
       vRefs.current.animatedMousePos.x,
       vRefs.current.mousePos.x,
@@ -79,25 +105,20 @@ export function BackgroundGradient() {
       vRefs.current.mousePos.y,
       0.1
     )
+
+    if (programRef.current) {
+      programRef.current.uniforms.uTime.value = time * 0.0005
+    }
   })
 
   return (
     <mesh>
       <QuadGeometry />
       <program
+        ref={programRef}
         vertex={MAIN_VERTEX}
         fragment={MAIN_FRAGMENT}
-        uniforms={{
-          mainColor: uniforms.mainColor,
-          cPos: [0, 0, 4],
-          cameraQuaternion: [0, 0, 0, 1],
-          fov: 45,
-          matcapMap: matcap,
-          reflectionMap: reflection,
-          resolution: vRefs.current.resolution,
-          mousePos: vRefs.current.animatedMousePos,
-          reflectionIntensity: uniforms.reflectionIntensity
-        }}
+        uniforms={uniformsRef.current}
       />
     </mesh>
   )
