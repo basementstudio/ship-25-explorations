@@ -7,7 +7,10 @@ export interface HeaderLink {
   url: string
 }
 
-const navLinks: HeaderLink[] = [{ name: "raymarch", url: "/" }]
+const navLinks: HeaderLink[] = [
+  { name: "raymarch", url: "/" },
+  { name: "fluid-solidify", url: "/fluid-solidify" }
+]
 
 export const Header = () => {
   return (
