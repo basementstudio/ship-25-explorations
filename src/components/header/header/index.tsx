@@ -1,7 +1,4 @@
-import React from "react"
-
 import Link from "~/components/primitives/link"
-import { clx } from "~/lib/clx"
 
 import MobileMenu from "./mobile-menu"
 
@@ -10,41 +7,15 @@ export interface HeaderLink {
   url: string
 }
 
-const navLinks: HeaderLink[] = [
-  { name: "Home", url: "/" },
-  { name: "About", url: "/about" },
-  { name: "Contact", url: "/contact" }
-]
+const navLinks: HeaderLink[] = [{ name: "raymarch", url: "/" }]
 
 export const Header = () => {
   return (
     <>
-      <Link
-        target="_blank"
-        href="https://foundry.basement.studio/"
-        className="flex relative items-center justify-center gap-2 border-b border-[var(--color-gray-lighter)] h-10 w-full z-over-canvas"
-      >
-        <p className="leading-[1.19rem] tracking-[-0.02em] uppercase text-[max(12px,0.625vw)]">
-          Introducing BASEMENT FOUNDRY. Check it out
-        </p>
-        <svg
-          className="h-3"
-          viewBox="0 0 20 15"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            fillRule="evenodd"
-            clipRule="evenodd"
-            d="M10.9497 1.56716L15.7542 6.3806L-3.76766e-07 6.3806L-2.78905e-07 8.6194L15.7542 8.6194L10.9497 13.4328L12.514 15L20 7.5L12.514 4.06671e-07L10.9497 1.56716Z"
-            fill="white"
-          />
-        </svg>
-      </Link>
       <div className="sticky w-full top-0 p-0 bg-black/70 z-over-canvas">
         <header className="h-[4.5rem] px-6 flex items-center justify-between z-40 relative border-b border-[var(--color-gray-lighter)]">
           <div className="flex basis-[30%] flex-grow">
-            <Link href="/" className="w-11 h-9">
+            <Link href="/" className="w-6 h-6">
               <svg
                 className="h-full"
                 viewBox="0 0 250 250"
@@ -73,24 +44,6 @@ export const Header = () => {
             ))}
           </ul>
           <MobileMenu links={navLinks} />
-          <div className="hidden md:flex items-center justify-end flex-grow basis-[30%] gap-[0.925rem]">
-            <button
-              className={clx(
-                "text-[max(16px,0.925vw)] py-[0.325rem] px-[1.35rem] rounded-[999px] transition-all duration-150 ease-in-out font-semibold hover:text-white",
-                "border border-[var(--color-gray)] bg-[var(--color-gray-lighter)] text-white hover:border-[var(--color-gray-lighter)] hover:bg-black"
-              )}
-            >
-              Primary
-            </button>
-            <button
-              className={clx(
-                "text-[max(16px,0.925vw)] py-[0.325rem] px-[1.35rem] rounded-[999px] transition-all duration-150 ease-in-out font-semibold hover:text-white",
-                "border border-[var(--color-gray-lighter)] bg-black text-white italic hover:bg-[var(--color-gray-lighter)]"
-              )}
-            >
-              Secondary
-            </button>
-          </div>
         </header>
       </div>
     </>
