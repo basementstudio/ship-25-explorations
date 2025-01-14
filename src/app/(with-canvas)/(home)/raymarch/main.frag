@@ -4,72 +4,53 @@ precision highp float;
 
 #define MAX_STEPS (300)
 #define SURFACE_DIST (0.001)
-#define MAX_DISTANCE (10.0)
+#define MAX_DISTANCE (7.0)
 
 uniform vec3 cPos;
 uniform vec4 cameraQuaternion;
 uniform float fov;
-uniform sampler2D hdriMap;
 uniform float uTime;
 uniform vec2 resolution;
-uniform vec3 mainColor;
 uniform vec2 mousePos;
 varying vec2 vUv;
 varying vec3 vWorldPos;
 varying vec3 vPosition;
 
 #pragma glslify: structsModule = require('./structs.glsl', Material=Material, RayHit=RayHit, CastedRay=CastedRay, RayLightResult=RayLightResult, SurfaceResult=SurfaceResult)
-#pragma glslify: booleanModule = require('./boolean-fn.glsl', Union=Union, Intersection=Intersection, Difference=Difference, SmoothMin=SmoothMin, RayHit=RayHit, Material=Material)
+#pragma glslify: booleanModule = require('./boolean-fn.glsl', opSmoothUnion=opSmoothUnion, RayHit=RayHit, Material=Material)
 #pragma glslify: transformsModule = require('./transforms.glsl', Translate=Translate)
 #pragma glslify: sdfModule = require('./distance-fn.glsl', sdSphere=sdSphere, sdBox=sdBox)
 
-RayHit ReflectiveSphere(vec3 p) {
-  Material reflectMat = Material(mainColor, 0.2, 0.4);
-  RayHit reflectiveBall = RayHit(sdSphere(p, 1.0), reflectMat);
-  return reflectiveBall;
-}
-
-RayHit ReflectiveCube(vec3 p) {
-  Material reflectMat = Material(mainColor, 0.2, 0.4);
-  RayHit reflectiveBall = RayHit(sdBox(p, vec3(0.5)), reflectMat);
-  return reflectiveBall;
-}
-
-RayHit getSceneHit(vec3 p) {
-  RayHit ball1 = ReflectiveSphere(Translate(p, vec3(0.0, 0.0, 0.0)));
+float getSceneHit(vec3 p) {
+  float ball1 = sdSphere(Translate(p, vec3(0.0, 0.0, 0.0)), 1.0);
 
   vec2 boxPos = mousePos * 2.0 - 1.0;
   boxPos.x *= resolution.x / resolution.y;
-  RayHit box = ReflectiveCube(Translate(p, vec3(boxPos, 0.0)));
-  return SmoothMin(ball1, box, 1.0);
+  float box = sdBox(Translate(p, vec3(boxPos, 0.0)), vec3(0.5));
+  return opSmoothUnion(ball1, box, 1.0);
 }
 
 #pragma glslify: surfaceModule = require('./surface.glsl', getSurfaceLight=getSurfaceLight, getSceneHit=getSceneHit, SurfaceResult=SurfaceResult, RayHit=RayHit, Material=Material)
 
 CastedRay castRay(vec3 ro, vec3 rd, float maxDistance, float surfaceDistance) {
   float d0 = 0.0;
-  RayHit hitPoint = getSceneHit(ro);
+  float hitPoint = getSceneHit(ro);
   for (int i = 0; i < MAX_STEPS; i++) {
     vec3 p = ro + d0 * rd;
     hitPoint = getSceneHit(p);
-    d0 += hitPoint.dist;
-    if (hitPoint.dist < surfaceDistance || d0 > maxDistance) {
+    d0 += hitPoint;
+    if (hitPoint < surfaceDistance || d0 > maxDistance) {
       break;
     }
     ;
   }
-  bool isHit = hitPoint.dist < surfaceDistance;
+  bool isHit = hitPoint < surfaceDistance;
   vec3 p = ro + d0 * rd;
-  return CastedRay(isHit, p, hitPoint);
+  return CastedRay(isHit, p);
 }
 
 vec2 normalToUv(vec3 normal) {
   return normal.xy;
-}
-
-vec3 getBackgroundColor(vec3 normal) {
-  vec2 uv = normalToUv(normal);
-  return texture2D(hdriMap, uv).rgb * 2.0;
 }
 
 // returns a color for the given ray
@@ -88,24 +69,8 @@ vec3 rayMarch(vec3 ro, vec3 rd) {
   RayLightResult lightResult;
 
   if (hit.hit) {
-    SurfaceResult objectLight = getSurfaceLight(
-      hit.position,
-      rayDirection,
-      hit.rayHit
-    );
+    SurfaceResult objectLight = getSurfaceLight(hit.position, rayDirection);
     lightResult = RayLightResult(objectLight.color, objectLight.reflectFactor);
-
-    rayDirection = reflect(rayDirection, objectLight.normal);
-    RayLightResult backgroundLight = RayLightResult(
-      getBackgroundColor(rayDirection),
-      0.0
-    );
-
-    lightResult.color = mix(
-      lightResult.color,
-      backgroundLight.color,
-      lightResult.reflectFactor
-    );
   } else {
     lightResult = RayLightResult(vec3(0.0), 0.0);
   }

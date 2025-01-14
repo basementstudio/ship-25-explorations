@@ -18,6 +18,11 @@ RayHit Difference(RayHit hit1, RayHit hit2) {
   return Intersection(hit1, RayHit(-hit2.dist, hit2.material));
 }
 
+float opSmoothUnion(float d1, float d2, float k) {
+  float h = clamp(0.5 + 0.5 * (d2 - d1) / k, 0.0, 1.0);
+  return mix(d2, d1, h) - k * h * (1.0 - h);
+}
+
 RayHit SmoothMin(RayHit hit1, RayHit hit2, float k) {
   // distance mix
   float d1 = hit1.dist;
@@ -43,6 +48,7 @@ RayHit SmoothMin(RayHit hit1, RayHit hit2, float k) {
   return RayHit(d, mat);
 }
 
+#pragma glslify: export(opSmoothUnion)
 #pragma glslify: export(Union)
 #pragma glslify: export(Intersection)
 #pragma glslify: export(Difference)

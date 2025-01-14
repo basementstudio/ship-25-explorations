@@ -12,10 +12,22 @@ import MAIN_FRAGMENT from "./main.frag"
 import MAIN_VERTEX from "./main.vert"
 
 export function BackgroundGradient() {
+  const vRefs = useRef({
+    resolution: new Vec2(1, 1),
+    mousePos: new Vec2(0, 0),
+    animatedMousePos: new Vec2(0, 0)
+  })
+
   const [uniforms] = useControls(() => ({
     Raymarch: levaFolder(
       {
-        mainColor: "#3b3b3b"
+        mainColor: "#3b3b3b",
+        reflectionIntensity: {
+          value: 0.8,
+          min: 0,
+          max: 1,
+          step: 0.01
+        }
       },
       {
         collapsed: false
@@ -23,14 +35,12 @@ export function BackgroundGradient() {
     )
   }))
 
-  const hdriMap = useLoader(TextureLoader, "/textures/studio_small_02_1k.png")
+  const matcap = useLoader(TextureLoader, "/textures/matcap-1.png")
+  const reflection = useLoader(
+    TextureLoader,
+    "/textures/studio_small_02_1k.png"
+  )
   const canvas = useOGL((state) => state.gl.canvas)
-
-  const vRefs = useRef({
-    resolution: new Vec2(1, 1),
-    mousePos: new Vec2(0, 0),
-    animatedMousePos: new Vec2(0, 0)
-  })
 
   useEffect(() => {
     const controller = new AbortController()
@@ -82,9 +92,11 @@ export function BackgroundGradient() {
           cPos: [0, 0, 4],
           cameraQuaternion: [0, 0, 0, 1],
           fov: 45,
-          hdriMap,
+          matcapMap: matcap,
+          reflectionMap: reflection,
           resolution: vRefs.current.resolution,
-          mousePos: vRefs.current.animatedMousePos
+          mousePos: vRefs.current.animatedMousePos,
+          reflectionIntensity: uniforms.reflectionIntensity
         }}
       />
     </mesh>

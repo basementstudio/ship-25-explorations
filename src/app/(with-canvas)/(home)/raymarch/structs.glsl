@@ -12,7 +12,6 @@ struct RayHit {
 struct CastedRay {
   bool hit;
   vec3 position;
-  RayHit rayHit;
 };
 
 struct RayLightResult {
