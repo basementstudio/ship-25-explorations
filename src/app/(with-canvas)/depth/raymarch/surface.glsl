@@ -1,26 +1,18 @@
-uniform vec3 mainColor;
-uniform sampler2D matcapMap;
-uniform sampler2D reflectionMap;
-uniform float reflectionIntensity;
-uniform vec3 lightDirection;
-
 #pragma glslify: cnoise3d = require('glsl-noise/classic/3d')
 
 #define PI (3.14159265359)
 
 #pragma glslify: getVogel = require('./math.glsl')
 
+const float ior = 1.01;
+
 vec2 normalToReflectionUv(vec3 n) {
   float u = atan(n.x, n.z) / (2.0 * PI) + 0.5;
+  // Remap u to go from 0 to 1 to 0
+  u = 1.0 - abs(2.0 * u - 1.0);
+
   float v = n.y * 0.5 + 0.5;
   return vec2(u, v);
-}
-
-vec3 getReflection(vec3 normal) {
-  vec2 uv = normalToReflectionUv(normal);
-  uv.y = 1.0 - uv.y;
-  vec3 reflection = texture2D(reflectionMap, uv).rgb;
-  return reflection;
 }
 
 // Normal calculation function (using gradient):
@@ -35,84 +27,77 @@ vec3 getNormal(vec3 p) {
   return normalize(vec3(gradientX, gradientY, gradientZ));
 }
 
-// Quaternion multiplication
-vec4 qmul(vec4 q1, vec4 q2) {
-  return vec4(
-    q1.w * q2.xyz + q2.w * q1.xyz + cross(q1.xyz, q2.xyz),
-    q1.w * q2.w - dot(q1.xyz, q2.xyz)
-  );
+const int totalSamples = 20;
+const float diskSize = 0.01;
+
+float rand3(vec3 p) {
+  return fract(sin(dot(p, vec3(12.75613, 38.12123, 78.23121))) * 13234.76575);
 }
 
-// Rotate vector by quaternion
-vec3 rotateVector(vec3 v, vec4 q) {
-  vec4 qv = qmul(q, vec4(v, 0.0));
-  vec4 qinv = vec4(-q.xyz, q.w);
-  return qmul(qv, qinv).xyz;
+float getGaussian(float x, float sigma) {
+  return exp(-x * x / (2.0 * sigma * sigma));
 }
 
-// Get rotation quaternion from two vectors
-vec4 getRotationBetweenVectors(vec3 from, vec3 to) {
-  vec3 axis = cross(from, to);
-  float cosAngle = dot(from, to);
-  float k = sqrt(dot(from, from) * dot(to, to));
+vec3 getReflection(vec3 normal, float randomRotation) {
+  vec2 uv = normalToReflectionUv(normal);
+  vec3 reflection = vec3(0.0);
 
-  if (cosAngle / k == -1.0) {
-    // 180 degree rotation around any perpendicular axis
-    vec3 perpendicular = normalize(
-      abs(from.x) < 0.9
-        ? cross(from, vec3(1.0, 0.0, 0.0))
-        : cross(from, vec3(0.0, 1.0, 0.0))
+  reflection = vec3(0.0);
+
+  for (int i = 0; i < totalSamples; i++) {
+    vec2 distUv = getVogel(
+      diskSize,
+      float(i),
+      float(totalSamples),
+      randomRotation
     );
-    return vec4(perpendicular, 0.0);
+    float gaussian = getGaussian(float(i) / float(totalSamples), 0.1);
+    reflection += texture2D(reflectionMap, uv + distUv).rgb * gaussian;
   }
 
-  return normalize(vec4(axis, k + cosAngle));
+  reflection /= float(totalSamples);
+  reflection *= 6.0;
+
+  return reflection;
 }
 
-vec3 rotateRay(vec3 rd, vec2 uv) {
-  // Convert uv to a 3D direction vector
-  vec3 uvDirection = normalize(vec3(uv, 1.0));
-
-  // Get the rotation quaternion from up vector to UV direction
-  vec4 rotation = getRotationBetweenVectors(vec3(0.0, 0.0, 1.0), uvDirection);
-
-  // Apply the rotation to the ray direction
-  return rotateVector(rd, rotation);
-}
-
-const int totalSamples = 40;
-const float diskSize = 0.06;
-
-vec3 rand(vec2 uv) {
-  return vec3(
-    fract(sin(dot(uv, vec2(12.75613, 38.12123))) * 13234.76575),
-    fract(sin(dot(uv, vec2(19.45531, 58.46547))) * 43678.23431),
-    fract(sin(dot(uv, vec2(23.67817, 78.23121))) * 93567.23423)
-  );
-}
-
-SurfaceResult getSurfaceLight(vec3 p, vec3 rd) {
+SurfaceResult getSurfaceLight(vec3 p, vec3 rd, vec3 ro) {
   vec3 viewDirection = -rd;
   vec3 materialColor = mainColor;
   vec3 normal = getNormal(p);
 
-  float rotation = rand(p.xy).x;
-
   float lambert = max(0.0, dot(lightDirection, normal));
+  vec3 vLambertLight = mainColor * lambert;
+
+  float fresnel = pow(1.0 - dot(normal, viewDirection), 5.0);
+
+  float specularExponent = pow(2.0, glossiness * 10.0) + 20.0;
+  vec3 halfVector = normalize(lightDirection + viewDirection);
+  float specular = max(dot(halfVector, normal), 0.0);
+  specular = pow(specular, specularExponent);
+  specular = specular * smoothstep(0.0, 1.0, lambert * 2.0);
+  specular = specular * glossiness * 0.001;
+
+  float specular2 = dot(normal, lightDirection);
+  specular2 = pow(specular2, specularExponent);
+  specular2 = specular2 * smoothstep(0.0, 1.0, lambert * 2.0);
+  specular2 = specular2 * glossiness;
+  specular2 *= lightIntensity;
+
+  specular += specular2;
+
+  vec3 vSpecularLight = vec3(1.0) * specular * lightIntensity;
+  // combining the two lights
+  vec3 light = vLambertLight + vSpecularLight;
 
   vec3 reflectionDirection = reflect(rd, normal);
 
-  vec3 reflection = vec3(0.0);
+  float rotation = rand3(p * 100.0);
+  vec3 reflection =
+    getReflection(reflectionDirection, rotation) * reflectionIntensity;
+  light += reflection * fresnel;
 
-  for (int i = 0; i < totalSamples; i++) {
-    vec2 uv = getVogel(diskSize, float(i), float(totalSamples), rotation);
-    reflection += getReflection(rotateRay(reflectionDirection, uv));
-  }
-
-  reflection /= float(totalSamples);
-  reflection *= 5.0;
-
-  vec3 light = reflection * materialColor;
+  // vec3 light = lambert * materialColor;
 
   return SurfaceResult(vec3(light), normal, 0.0);
 }

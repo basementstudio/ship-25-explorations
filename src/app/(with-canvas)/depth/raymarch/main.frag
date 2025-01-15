@@ -3,9 +3,9 @@ precision highp float;
 #pragma glslify: cnoise = require('glsl-noise/classic/2d')
 #pragma glslify: cnoise3d = require('glsl-noise/classic/3d')
 
-#define MAX_STEPS (200)
-#define SURFACE_DIST (0.0001)
-#define MAX_DISTANCE (20.0)
+#define MAX_STEPS (300)
+#define SURFACE_DIST (0.00001)
+#define MAX_DISTANCE (30.0)
 
 uniform vec3 cPos;
 uniform vec4 cameraQuaternion;
@@ -14,6 +14,15 @@ uniform float uTime;
 uniform vec2 resolution;
 uniform vec2 mousePos;
 uniform mat3 floorRotation;
+uniform vec3 projectedMousePos;
+uniform float speed;
+uniform vec3 mainColor;
+uniform sampler2D matcapMap;
+uniform sampler2D reflectionMap;
+uniform float reflectionIntensity;
+uniform vec3 lightDirection;
+uniform float lightIntensity;
+uniform float glossiness;
 
 varying vec2 vUv;
 varying vec3 vWorldPos;
@@ -28,30 +37,46 @@ float random(vec2 p) {
   return fract(sin(dot(p.xy, vec2(12.345, 67.89))) * 43758.5453123);
 }
 
-float getNoiseLevel(vec2 p) {
-  return cnoise3d(vec3(p.xy * 1.0, uTime * 0.4));
+float getNoiseLevel(vec3 p) {
+  float centerLength = 1.0;
+
+  vec3 centerP = Translate(p, projectedMousePos);
+  float center = (centerLength - length(centerP)) / centerLength;
+  center = clamp(center, 0.0, 1.0);
+  center = smoothstep(0.0, 1.0, center);
+
+  float sinNoise = sin((center + uTime * 0.1) * 20.0) * 0.1 * center;
+
+  // polar noise arriund center
+  float polarNoise = cos(atan(centerP.x, centerP.z) * 50.0 + uTime * 10.0);
+
+  float n2 = sin(p.x * 20.0) + sin(p.z * 20.0);
+
+  float bigNoise = cnoise3d(vec3(p.xz * 2.3, uTime * 0.2));
+
+  float n = 0.0;
+  n = bigNoise * n2 * sinNoise + sinNoise * 0.3;
+  n *= speed;
+  return n;
 }
 
 float getSceneHit(vec3 p) {
   vec3 floorP = p;
-  // floorP = Translate(floorP, vec3(0.0, 0.0, getNoiseLevel(p.xy) * 0.3));
-  // floorP = p * floorRotation;
-  // floorP = Translate(floorP, vec3(0.0, -1.0, 0.0));
+  floorP = Translate(
+    floorP,
+    vec3(0.0, getNoiseLevel(vec3(p.x, 0.0, p.z)), 0.0)
+  );
 
-  float floorPlane = sdPlane(floorP, vec4(0.0, 1.0, 0.0, 1.0));
+  float floorPlane = sdPlane(floorP, vec4(0.0, 1.0, 0.0, 0.0));
 
-  // float voxels = sdVoxels(p);
-  // return opSmoothUnion(floorPlane, voxels, 0.5);
+  vec3 cubeCenter = projectedMousePos;
+  cubeCenter.y += 0.2;
+  float cube = sdSphere(Translate(p, cubeCenter), 0.05);
 
-  float piramidScale = 2.0;
-  vec3 pyramidP = p;
-  pyramidP = Translate(pyramidP, vec3(0.0, -0.3, 0.0));
-  pyramidP = Rotate(pyramidP, vec3(-0.8, 0.0, 0.0));
-  float pyramid = sdPyramid(pyramidP / piramidScale, 0.7) * piramidScale;
-  return opSmoothUnion(floorPlane, pyramid, 1.0);
+  return min(floorPlane, cube);
 }
 
-#pragma glslify: surfaceModule = require('./surface.glsl', getSurfaceLight=getSurfaceLight, getSceneHit=getSceneHit, SurfaceResult=SurfaceResult, RayHit=RayHit, Material=Material)
+#pragma glslify: surfaceModule = require('./surface.glsl', getSurfaceLight=getSurfaceLight, getSceneHit=getSceneHit, SurfaceResult=SurfaceResult, RayHit=RayHit, Material=Material, mainColor=mainColor, matcapMap=matcapMap, reflectionMap=reflectionMap, reflectionIntensity=reflectionIntensity, lightDirection=lightDirection, glossiness=glossiness, lightIntensity=lightIntensity)
 
 CastedRay castRay(vec3 ro, vec3 rd, float maxDistance, float surfaceDistance) {
   float d0 = 0.0;
@@ -90,8 +115,9 @@ vec3 rayMarch(vec3 ro, vec3 rd) {
   RayLightResult lightResult;
 
   if (hit.hit) {
-    SurfaceResult objectLight = getSurfaceLight(hit.position, rayDirection);
+    SurfaceResult objectLight = getSurfaceLight(hit.position, rayDirection, ro);
     lightResult = RayLightResult(objectLight.color, objectLight.reflectFactor);
+
   } else {
     lightResult = RayLightResult(vec3(0.0), 0.0);
   }
