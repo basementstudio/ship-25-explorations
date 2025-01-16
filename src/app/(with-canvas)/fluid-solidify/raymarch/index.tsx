@@ -41,7 +41,7 @@ export function RaymarchShader() {
   } satisfies Record<string, any>)
 
   useControls(() => ({
-    Raymarch: levaFolder(
+    FluidOptions: levaFolder(
       {
         mainColor: {
           value: defaultColor,

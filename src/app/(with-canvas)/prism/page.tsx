@@ -1,14 +1,18 @@
 "use client"
 
+import dynamic from "next/dynamic"
+
 import { WebGL } from "~/gl/tunnel"
 
-import { RaymarchShader } from "./raymarch"
+const Scene = dynamic(() => import("./scene").then((mod) => mod.Scene), {
+  ssr: false
+})
 
 export default function Home() {
   return (
     <main className="">
       <WebGL.In>
-        <RaymarchShader />
+        <Scene />
       </WebGL.In>
     </main>
   )

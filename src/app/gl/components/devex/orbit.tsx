@@ -11,19 +11,26 @@ export const orbitCamera = new Camera(GLOBAL_GL, {
 
 orbitCamera.position.set(0, 15, 30)
 
-export const OrbitHelper = () => {
+interface OrbitHelperProps {
+  isActive?: boolean
+  camera?: Camera
+}
+
+export const OrbitHelper = ({ isActive, camera }: OrbitHelperProps) => {
   const activeCamera = useGlControls((s) => s.activeCamera)
-  const orbitActive = activeCamera === "debug-orbit"
+  const orbitActive = activeCamera === "debug-orbit" || Boolean(isActive)
+
+  const activeOrbitCamera = useMemo(() => camera || orbitCamera, [camera])
 
   const orbitControls = useMemo(() => {
-    return new Orbit(orbitCamera, {
+    return new Orbit(activeOrbitCamera, {
       target: new Vec3(0, 0, 0),
       zoomSpeed: 0.3,
       element: GLOBAL_GL.canvas,
       rotateSpeed: 0.1,
       enabled: false
     })
-  }, [])
+  }, [activeOrbitCamera])
 
   useEffect(() => {
     orbitControls.enabled = orbitActive
@@ -31,9 +38,9 @@ export const OrbitHelper = () => {
 
   useFrame(({ size }) => {
     const aspect = size.width / size.height
-    orbitCamera.perspective({ aspect })
+    activeOrbitCamera.perspective({ aspect })
     orbitControls.update()
   })
 
-  return <primitive dispose={null} object={orbitCamera} />
+  return <primitive dispose={null} object={activeOrbitCamera} />
 }

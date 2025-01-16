@@ -6,7 +6,7 @@ import { RaymarchShader } from "./raymarch"
 
 export default function Home() {
   return (
-    <main className="flex min-h-screen z-over-canvas relative">
+    <main className="">
       <WebGL.In>
         <RaymarchShader />
       </WebGL.In>

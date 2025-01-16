@@ -6,7 +6,7 @@ import { BackgroundGradient } from "./raymarch"
 
 export default function Home() {
   return (
-    <main className="flex min-h-screen z-over-canvas relative">
+    <main className="">
       <WebGL.In>
         <BackgroundGradient />
       </WebGL.In>

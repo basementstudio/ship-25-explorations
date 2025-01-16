@@ -71,7 +71,7 @@ export function RaymarchShader() {
   } satisfies Record<string, any>)
 
   useControls(() => ({
-    Raymarch: levaFolder(
+    DepthOptions: levaFolder(
       {
         cameraRotation: {
           value: [defaultRotation.x, defaultRotation.y, defaultRotation.z],

@@ -14,7 +14,7 @@ import { Helpers } from "./devex/helpers"
 
 /** Canvas with main scene */
 const PageCanvas = () => {
-  const { hasRendered, activeCamera } = useGlControls()
+  const { hasRendered } = useGlControls()
   const isDebug = useAppStore((s) => s.isDebug)
 
   return (
@@ -23,8 +23,7 @@ const PageCanvas = () => {
       className={clsx(
         "fixed top-0 left-0 w-full h-screen z-canvas transition-opacity duration-500",
         /* Opacity 0 until we render the first frame to prevent canvas flicker on start-up */
-        hasRendered ? "opacity-100" : "opacity-0",
-        activeCamera === "debug-orbit" && "!z-debug-canvas"
+        hasRendered ? "opacity-100" : "opacity-0"
       )}
     >
       {isDebug && (
