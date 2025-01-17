@@ -94,6 +94,19 @@ export function BackgroundGradient() {
     return () => controller.abort()
   }, [canvas])
 
+  // set scene camera
+  useEffect(() => {
+    const controller = new AbortController()
+    const signal = controller.signal
+
+    import("~/gl/hooks/use-gl-controls").then((mod) => {
+      if (signal.aborted) return
+      mod.useGlControls.setState({ activeCamera: "main" })
+    })
+
+    return () => controller.abort()
+  }, [])
+
   useFrame((state, time) => {
     vRefs.current.animatedMousePos.x = lerp(
       vRefs.current.animatedMousePos.x,

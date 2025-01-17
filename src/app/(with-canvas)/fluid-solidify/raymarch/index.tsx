@@ -69,6 +69,19 @@ export function RaymarchShader() {
 
   const canvas = useOGL((state) => state.gl.canvas)
 
+  // set scene camera
+  useEffect(() => {
+    const controller = new AbortController()
+    const signal = controller.signal
+
+    import("~/gl/hooks/use-gl-controls").then((mod) => {
+      if (signal.aborted) return
+      mod.useGlControls.setState({ activeCamera: "main" })
+    })
+
+    return () => controller.abort()
+  }, [])
+
   useEffect(() => {
     const controller = new AbortController()
     const signal = controller.signal
