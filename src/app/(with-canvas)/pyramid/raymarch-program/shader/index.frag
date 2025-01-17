@@ -17,7 +17,7 @@ uniform float time;
 
 out vec4 fragColor;
 
-#pragma glslify: PI = require('glsl-constants/pi')
+#pragma glslify: PI = require('glsl-constants/PI')
 
 void main() {
   vec2 normal = getSurfaceNormal(vUv);
