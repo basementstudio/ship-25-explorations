@@ -1,4 +1,4 @@
-import { Camera, GLTFLoader, Mesh, Texture, RenderTarget } from "ogl"
+import { Camera, GLTFLoader, Mesh, RenderTarget } from "ogl"
 import { useEffect, useMemo, useRef } from "react"
 import { useFrame, useLoader, useOGL } from "react-ogl"
 
