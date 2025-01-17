@@ -1,4 +1,4 @@
-import { Camera, GLTFLoader, Mesh, RenderTarget } from "ogl"
+import { Camera, GLTFLoader, Mesh, Texture, RenderTarget } from "ogl"
 import { useEffect, useMemo, useRef } from "react"
 import { useFrame, useLoader, useOGL } from "react-ogl"
 
@@ -10,7 +10,7 @@ import { getGlassProgram } from "../glass-program"
 import { getRaymarchProgram } from "../raymarch-program"
 
 export function Scene() {
-  const gltf = useLoader(GLTFLoader, "/models/tri.glb")
+  const gltf = useLoader(GLTFLoader, "/models/triangle.glb")
 
   const geometry = useMemo(() => {
     const baseMesh = gltf.meshes[0].primitives[0] as any as Mesh
@@ -29,7 +29,7 @@ export function Scene() {
 
   const camera = useMemo(() => {
     const camera = new Camera(gl).perspective()
-    camera.position.set(0, 0, 5)
+    camera.position.set(0, 0, 4)
     return camera
   }, [gl])
 
@@ -41,7 +41,9 @@ export function Scene() {
   const raymarchTarget = useMemo(() => {
     const target = new RenderTarget(gl, {
       width: 1024,
-      height: 1024
+      height: 1024,
+      depth: false,
+      depthTexture: true
     })
 
     return target
@@ -57,7 +59,7 @@ export function Scene() {
     const program = getGlassProgram(gl)
 
     program.uniforms.uRaymarchTexture = { value: raymarchTarget.texture }
-
+    program.uniforms.uDepthTexture = { value: raymarchTarget.depthTexture }
     return program
   }, [gl, raymarchTarget])
 
@@ -65,8 +67,8 @@ export function Scene() {
 
   useEffect(() => {
     const handleResize = () => {
-      const width = canvas.width / 1
-      const height = canvas.height / 1
+      const width = Math.ceil(canvas.width / 1)
+      const height = Math.ceil(canvas.height / 1)
       raymarchTarget.setSize(width, height)
       glassProgram.uniforms.uRaymarchTexture.value = raymarchTarget.texture
     }
@@ -101,7 +103,9 @@ export function Scene() {
       target: raymarchTarget
     })
 
-    gl.clearColor(1, 1, 1, 1)
+    const clearColor = 0.85
+
+    gl.clearColor(clearColor, clearColor, clearColor, 1)
 
     // set normal material back
     // set normal material back
@@ -116,10 +120,10 @@ export function Scene() {
   return (
     <>
       <OrbitHelper isActive={true} camera={camera} />
-      <transform position={[0, -0.5, 0]}>
+      <transform rotation={[Math.PI * 0.1, 0, 0]} position={[0, -0.35, 0]}>
         <mesh ref={meshRef}>
           <primitive object={geometry} />
-          <normalProgram />
+          <primitive object={glassProgram} />
         </mesh>
       </transform>
     </>

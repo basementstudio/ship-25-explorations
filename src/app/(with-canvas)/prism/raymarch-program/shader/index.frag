@@ -1,17 +1,23 @@
+#version 300 es
+
 precision highp float;
 
-varying vec3 vNormal;
-varying vec2 vUv;
-varying vec3 wPos;
-varying vec3 viewDirection;
+in vec3 vNormal;
+in vec2 vUv;
+in vec3 wPos;
+in vec3 viewDirection;
 
 uniform vec3 cameraPosition;
 uniform float time;
 
-#pragma glslify: rayMarch = require('./raymarch.glsl', wPos = wPos, viewDirection = viewDirection, cameraPosition = cameraPosition, time=time)
+#pragma glslify: structsModule = require('./structs.glsl', RaymarchResult=RaymarchResult)
+#pragma glslify: rayMarch = require('./raymarch.glsl', wPos = wPos, viewDirection = viewDirection, cameraPosition = cameraPosition, time=time, RaymarchResult=RaymarchResult)
+
+out vec4 fragColor;
 
 void main() {
-  vec4 color = rayMarch();
-  gl_FragColor = vec4(color.xyz, 1.0);
-  gl_FragColor.a = color.a;
+  RaymarchResult result = rayMarch();
+  fragColor = vec4(result.color.xyz, 1.0);
+  fragColor.a = result.color.a;
+  gl_FragDepth = result.depth;
 }

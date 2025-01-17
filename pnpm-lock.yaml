@@ -49,6 +49,9 @@ importers:
       eslint-plugin-simple-import-sort:
         specifier: ^12.1.1
         version: 12.1.1(eslint@8.57.1)
+      glsl-constants:
+        specifier: ^2.0.1
+        version: 2.0.1
       glsl-noise:
         specifier: ^0.0.0
         version: 0.0.0
@@ -1441,6 +1444,10 @@ packages:
   globalthis@1.0.4:
     resolution: {integrity: sha512-DpLKbNU4WylpxJykQujfCcwYWiV/Jhm50Goo0wrVILAv5jOr9d+H+UR3PhSCD2rCCEIg0uc+G+muBTwD54JhDQ==}
     engines: {node: '>= 0.4'}
+
+  glsl-constants@2.0.1:
+    resolution: {integrity: sha512-+92w2eioJ6df1R+nd4BAbaCOZxYCJ6n33JgglwId1TlQ/w4kjPdnnNLxrLY4UjTk0C2XX43x7cFL2h62HtefwA==}
+    engines: {node: '>=16.0.0', npm: '>=7.0.0'}
 
   glsl-inject-defines@1.0.3:
     resolution: {integrity: sha512-W49jIhuDtF6w+7wCMcClk27a2hq8znvHtlGnrYkSWEr8tHe9eA2dcnohlcAmxLYBSpSSdzOkRdyPTrx9fw49+A==}
@@ -4457,6 +4464,8 @@ snapshots:
     dependencies:
       define-properties: 1.2.1
       gopd: 1.0.1
+
+  glsl-constants@2.0.1: {}
 
   glsl-inject-defines@1.0.3:
     dependencies:

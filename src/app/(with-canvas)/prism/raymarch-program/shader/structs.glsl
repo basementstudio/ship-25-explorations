@@ -4,4 +4,10 @@ struct RayResult {
   float distance;
 };
 
+struct RaymarchResult {
+  vec4 color;
+  float depth;
+};
+
 #pragma glslify: export(RayResult)
+#pragma glslify: export(RaymarchResult)

@@ -1,7 +1,9 @@
+#version 300 es
+
 precision highp float;
 
-attribute vec3 position;
-attribute vec2 uv;
+in vec3 position;
+in vec2 uv;
 
 uniform mat4 modelMatrix;
 uniform mat4 modelViewMatrix;
@@ -9,10 +11,10 @@ uniform mat4 projectionMatrix;
 uniform mat3 normalMatrix;
 uniform vec3 cameraPosition;
 
-varying vec3 vNormal;
-varying vec2 vUv;
-varying vec3 wPos;
-varying vec3 viewDirection;
+out vec3 vNormal;
+out vec2 vUv;
+out vec3 wPos;
+out vec3 viewDirection;
 
 void main() {
   vUv = uv;

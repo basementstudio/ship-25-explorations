@@ -12,9 +12,9 @@ vec3 getNormal(vec3 p) {
   return normalize(vec3(gradientX, gradientY, gradientZ));
 }
 
-vec3 lightDirection = normalize(vec3(1.0, 1.0, 1.0));
-vec3 mainColor = vec3(0.1);
-float glossiness = 1.0;
+vec3 lightDirection = normalize(vec3(1.3, -0.5, 1.1));
+vec3 mainColor = vec3(0.2);
+float glossiness = 1.8;
 float lightIntensity = 1.0;
 
 vec3 getSurface(vec3 p, vec3 rayDirection) {
