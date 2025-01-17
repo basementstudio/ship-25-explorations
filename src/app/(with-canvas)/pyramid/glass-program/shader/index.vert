@@ -2,6 +2,7 @@ precision highp float;
 
 attribute vec3 position;
 attribute vec2 uv;
+attribute vec3 normal;
 
 uniform mat4 modelMatrix;
 uniform mat4 modelViewMatrix;
@@ -25,4 +26,6 @@ void main() {
   gl_Position = projectedPosition;
   vScreenUV = projectedPosition.xy / projectedPosition.w * 0.5 + 0.5;
   viewDirection = normalize(cameraPosition - wPos) * vec3(-1);
+
+  vNormal = normalize(normalMatrix * normal);
 }

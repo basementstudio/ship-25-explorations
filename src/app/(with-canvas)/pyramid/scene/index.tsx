@@ -28,8 +28,10 @@ export function Scene() {
   const gl = useOGL((s) => s.gl)
 
   const camera = useMemo(() => {
-    const camera = new Camera(gl).perspective()
-    camera.position.set(0, 0, 4)
+    const camera = new Camera(gl).perspective({
+      fov: 30
+    })
+    camera.position.set(0, 0, 6)
     return camera
   }, [gl])
 

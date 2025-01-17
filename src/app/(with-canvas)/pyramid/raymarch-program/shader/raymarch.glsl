@@ -1,4 +1,4 @@
-#pragma glslify: getSurface = require('./get-surface.glsl', time=time, viewDirection=viewDirection)
+#pragma glslify: getSurface = require('./get-surface.glsl', time=time)
 #pragma glslify: structsModule = require('./structs.glsl', RayResult=RayResult)
 #pragma glslify: getSceneHit = require('./get-scene-hit.glsl', time=time)
 
@@ -30,9 +30,9 @@ RayResult castRay(
   return RayResult(isHit, p, d0);
 }
 
-RaymarchResult rayMarch() {
+RaymarchResult rayMarch(vec3 viewDirection) {
   vec3 rayPosition = wPos;
-  vec3 rayDirection = normalize(viewDirection);
+  vec3 rayDirection = viewDirection;
   vec4 result = vec4(1.0, 1.0, 1.0, 0.0);
 
   float distance = 0.0;
