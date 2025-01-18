@@ -17,16 +17,20 @@ uniform sampler2D uDepthTexture;
 
 const float diskSize = 0.04;
 
-vec3 lightDirection = normalize(vec3(2.0, -0.5, 4.0));
-float glossiness = 0.1;
+vec3 lightDirection = normalize(vec3(1.0, -0.2, 2.0));
+float glossiness = 0.5;
+float normalScale = 0.05;
 
 float getSpecular() {
   vec2 surfaceNormal = getSurfaceNormal(vUv);
-  vec3 rotatedNormal = rotateVector2(normalize(vNormal), surfaceNormal * 0.07);
+  vec3 rotatedNormal = rotateVector2(
+    normalize(vNormal),
+    surfaceNormal * normalScale
+  );
 
   float lambert = max(0.0, dot(lightDirection, rotatedNormal));
 
-  float specularExponent = pow(2.0, glossiness * 3.0) + 10.0;
+  float specularExponent = pow(2.0, glossiness * 10.0) + 10.0;
   float specular = dot(rotatedNormal, lightDirection);
   specular = abs(specular);
   specular = pow(specular, specularExponent);
@@ -44,7 +48,7 @@ vec3 getColor() {
   depth = smoothstep(0.0, 1.0, depth);
 
   vec4 color = glassColor(vScreenUV, depth * diskSize);
-  color.rgb = mix(vec3(0.6), color.rgb, color.a);
+  color.rgb = mix(vec3(0.8), color.rgb, color.a);
 
   return color.rgb;
 }

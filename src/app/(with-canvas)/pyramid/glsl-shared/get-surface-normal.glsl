@@ -1,7 +1,7 @@
 #pragma glslify: snoise2 = require('glsl-noise/classic/2d')
 
 const float sampleShift = 0.01;
-const float scale = 400.0;
+const float scale = 800.0;
 
 vec2 getSurfaceNormal(vec2 centerUv) {
   vec2 sampleUv = centerUv * scale;

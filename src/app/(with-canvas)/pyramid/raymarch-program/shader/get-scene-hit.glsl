@@ -26,7 +26,10 @@ float getSceneHit(vec3 p) {
   vec3 sphereCenter = vec3(0.0, -0.3, 0.0);
   vec3 sphereP = p - sphereCenter;
 
-  return sdSphere(sphereP, sphereRadius) - noise;
+  // Prevent overshoot
+  float fixSpace = 0.3;
+
+  return (sdSphere(sphereP, sphereRadius) - noise) * fixSpace;
 }
 
 #pragma glslify: export(getSceneHit)

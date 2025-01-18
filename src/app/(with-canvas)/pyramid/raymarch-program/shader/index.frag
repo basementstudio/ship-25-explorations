@@ -25,6 +25,7 @@ void main() {
 
   RaymarchResult result = rayMarch(rotatedViewDirection);
   fragColor = vec4(result.color.xyz, 1.0);
+
   fragColor.a = result.color.a;
   gl_FragDepth = result.depth;
 }
