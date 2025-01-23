@@ -27,4 +27,5 @@ void main() {
   gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
   viewDirection = -normalize(cameraPosition - wPos);
   vScreenUV = gl_Position.xy / gl_Position.w * 0.5 + 0.5;
+  vNormal = normal;
 }

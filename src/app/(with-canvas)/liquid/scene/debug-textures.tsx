@@ -36,6 +36,7 @@ export function DebugTextures({ textures, fullScreen }: DebugTexturesProps) {
 
   useFrame(({ renderer }) => {
     gl.clearColor(0, 0, 0, 0)
+
     const width = canvas.width
     const height = canvas.height
 

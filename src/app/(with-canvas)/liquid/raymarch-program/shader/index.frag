@@ -17,13 +17,36 @@ uniform float uFar;
 
 #pragma glslify: structsModule = require('./structs.glsl', RaymarchResult=RaymarchResult)
 #pragma glslify: rayMarch = require('./raymarch.glsl', wPos = wPos, time=time, RaymarchResult=RaymarchResult, texture = texture)
+#pragma glslify: depthModule = require('../../glsl-shared/depth.glsl', linearizeDepth = linearizeDepth, viewSpaceDepth = viewSpaceDepth)
 // #pragma glslify: getSurfaceNormal = require('../../glsl-shared/get-surface-normal.glsl')
 // #pragma glslify: rotateVector2 = require('../../glsl-shared/rotate-vector-2.glsl')
 
+#pragma glslify: packRGB = require('../../glsl-shared/pack-rgb.glsl')
 #pragma glslify: unpackRGB = require('../../glsl-shared/unpack-rgb.glsl')
 #pragma glslify: getThickness = require('./get-thickness.glsl')
 
-out vec4 fragColor;
+out vec4 fragColor[2];
+
+float getDepth(float raymarchTravel) {
+  // Get the current linear depth (distance from camera)
+  float viewSpaceZ = linearizeDepth(gl_FragCoord.z, uNear, uFar);
+
+  // Add our raymarch distance - both are now in view space units from camera
+  float newViewSpaceZ = viewSpaceZ + raymarchTravel;
+
+  // Convert back to [0,1] depth buffer space
+  return uFar * (newViewSpaceZ - uNear) / (newViewSpaceZ * (uFar - uNear));
+
+}
+
+vec3 getViewDirectionIor() {
+  // return viewDirection;
+  // Use refract to calculate the new direction based on IOR
+  // return normalize(viewDirection + vNormal * 0.1); // Very subtle deviation
+
+  return refract(normalize(viewDirection), normalize(vNormal), 0.97);
+
+}
 
 void main() {
   // vec2 normal = getSurfaceNormal(vUv);
@@ -34,10 +57,14 @@ void main() {
 
   float thickness = getThickness(insideZ, outsideZ, uNear, uFar);
 
-  RaymarchResult result = rayMarch(wPos, normalize(viewDirection), thickness);
-  fragColor = result.color;
+  vec3 viewDirectionIor = getViewDirectionIor();
 
-  // TODO: fix, the depth should be remaped from world space to 0-1
-  gl_FragDepth = result.depth;
+  RaymarchResult result = rayMarch(wPos, viewDirectionIor, thickness);
+  fragColor[0] = result.color;
+
+  float depth = getDepth(result.depth);
+  depth = mix(insideZ, depth, result.color.a);
+
+  fragColor[1] = vec4(packRGB(depth), 1.0);
 
 }

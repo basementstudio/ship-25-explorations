@@ -29,8 +29,8 @@ vec4 textureGood(sampler2D sam, vec2 uv) {
 vec3 getEnvColor(sampler2D envMap, vec3 normal) {
   vec2 uv = normalToEnvUv(normal);
   uv.y = 1.0 - uv.y;
-  vec3 col = textureGood(envMap, uv * 2.0).rgb;
-  col = pow(col, vec3(4.0));
+  vec3 col = textureGood(envMap, uv * vec2(2.0, 4.0)).rgb;
+  // col = pow(col, vec3(4.0));
   return col;
 }
 

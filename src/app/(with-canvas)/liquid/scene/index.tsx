@@ -21,16 +21,15 @@ import { getPostProgram } from "../post-program"
 import { getRaymarchProgram } from "../raymarch-program"
 import { DebugTextures } from "./debug-textures"
 
-const INSIDE_MODEL_SCALE = 0.98
+const INSIDE_MODEL_SCALE = 0.97
 const OUTSIDE_MODEL_SCALE = 1.0
 
 export function Scene() {
   const gl = useOGL((s) => s.gl)
 
   // maps
-  const gltf = useLoader(GLTFLoader, "/models/nico-triangle.glb")
-  const envMap = useLoader(TextureLoader, "/textures/flauta-hdri.png")
-
+  const gltf = useLoader(GLTFLoader, "/models/tri-solid-hd.glb")
+  const envMap = useLoader(TextureLoader, "/textures/hdri4.png")
   envMap.wrapS = gl.REPEAT
   envMap.wrapT = gl.REPEAT
   envMap.minFilter = gl.LINEAR_MIPMAP_LINEAR
@@ -59,7 +58,7 @@ export function Scene() {
       far: 20,
       fov: 10
     })
-    camera.position.set(-5, 3, 5)
+    camera.position.set(-4, 3, 6)
     return camera
   }, [gl])
 
@@ -90,7 +89,7 @@ export function Scene() {
     const target = new RenderTarget(gl, {
       width: 1024,
       height: 1024,
-      depthTexture: true
+      color: 2
     })
 
     return target
@@ -138,23 +137,6 @@ export function Scene() {
     return target
   }, [gl])
 
-  useEffect(() => {
-    const handleResize = () => {
-      raymarchTarget.setSize(canvas.width, canvas.height)
-      const width = Math.ceil(canvas.width / 1)
-      const height = Math.ceil(canvas.height / 1)
-      insideTarget.setSize(width, height)
-      outsideTarget.setSize(width, height)
-      raymarchTarget.setSize(width, height)
-      finalPassTarget.setSize(width, height)
-    }
-    window.addEventListener("resize", handleResize)
-    handleResize()
-    return () => {
-      window.removeEventListener("resize", handleResize)
-    }
-  }, [canvas, raymarchTarget, insideTarget, outsideTarget, finalPassTarget])
-
   const postScene = useMemo(() => {
     return new Transform()
   }, [])
@@ -175,9 +157,9 @@ export function Scene() {
     }
 
     // raymarch data
-    program.uniforms.uRaymarchTexture = { value: raymarchTarget.texture }
+    program.uniforms.uRaymarchTexture = { value: raymarchTarget.textures[0] }
     program.uniforms.uRaymarchDepthTexture = {
-      value: raymarchTarget.depthTexture
+      value: raymarchTarget.textures[1]
     }
 
     // camera data
@@ -187,6 +169,7 @@ export function Scene() {
     // others
     program.uniforms.uTime = { value: 0 }
     program.uniforms.uNoise = { value: noiseMap }
+    program.uniforms.uAspect = { value: 1 }
 
     return program
   }, [
@@ -197,6 +180,36 @@ export function Scene() {
     outsideTarget,
     envMap,
     noiseMap
+  ])
+
+  useEffect(() => {
+    const handleResize = () => {
+      const pixelRatio = renderer.dpr
+
+      const width = canvas.width * pixelRatio
+      const height = canvas.height * pixelRatio
+
+      // render targets
+      raymarchTarget.setSize(width, height)
+      insideTarget.setSize(width, height)
+      outsideTarget.setSize(width, height)
+      finalPassTarget.setSize(width, height)
+
+      // uniforms
+      postProgram.uniforms.uAspect.value = width / height
+    }
+    window.addEventListener("resize", handleResize)
+    handleResize()
+    return () => {
+      window.removeEventListener("resize", handleResize)
+    }
+  }, [
+    canvas,
+    raymarchTarget,
+    insideTarget,
+    outsideTarget,
+    finalPassTarget,
+    postProgram
   ])
 
   useFrame((_, time) => {
@@ -281,8 +294,8 @@ export function Scene() {
     insideTarget.textures[1],
     outsideTarget.textures[0],
     outsideTarget.textures[1],
-    raymarchTarget.texture,
-    raymarchTarget.depthTexture,
+    raymarchTarget.textures[0],
+    raymarchTarget.textures[1],
     finalPassTarget.texture
   ]
 
@@ -300,7 +313,7 @@ export function Scene() {
         postScene
       )}
       <OrbitHelper isActive={true} camera={camera} target={cameraTarget} />
-      <transform position={[0, 0, 0]}>
+      <transform scale={[0.7, 0.7, 0.7]} position={[0, 0.4, 0]}>
         <mesh ref={meshRef}>
           <primitive object={geometry} />
           {/* <sphere args={[1, 32, 32]} /> */}
