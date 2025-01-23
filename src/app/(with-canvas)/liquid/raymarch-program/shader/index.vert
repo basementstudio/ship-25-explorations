@@ -11,6 +11,7 @@ uniform mat4 modelViewMatrix;
 uniform mat4 projectionMatrix;
 uniform mat3 normalMatrix;
 uniform vec3 cameraPosition;
+uniform float uModelScale;
 
 out vec3 vNormal;
 out vec2 vUv;
@@ -20,9 +21,10 @@ out vec2 vScreenUV;
 
 void main() {
   vUv = uv;
+  vec3 pos = position * uModelScale;
 
-  wPos = (modelMatrix * vec4(position, 1.0)).xyz;
-  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  wPos = (modelMatrix * vec4(pos, 1.0)).xyz;
+  gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
   viewDirection = -normalize(cameraPosition - wPos);
   vScreenUV = gl_Position.xy / gl_Position.w * 0.5 + 0.5;
 }

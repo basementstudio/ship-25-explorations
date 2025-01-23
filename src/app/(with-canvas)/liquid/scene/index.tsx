@@ -17,14 +17,25 @@ import { QuadGeometry } from "~/gl/components/quad"
 import { useGlControls } from "~/gl/hooks/use-gl-controls"
 
 import { getInsideProgram } from "../inside-program"
-import { getMapDebugProgram } from "../map-debug-program"
 import { getPostProgram } from "../post-program"
 import { getRaymarchProgram } from "../raymarch-program"
 import { DebugTextures } from "./debug-textures"
 
+const INSIDE_MODEL_SCALE = 0.98
+const OUTSIDE_MODEL_SCALE = 1.0
+
 export function Scene() {
+  const gl = useOGL((s) => s.gl)
+
+  // maps
   const gltf = useLoader(GLTFLoader, "/models/nico-triangle.glb")
   const envMap = useLoader(TextureLoader, "/textures/flauta-hdri.png")
+
+  envMap.wrapS = gl.REPEAT
+  envMap.wrapT = gl.REPEAT
+  envMap.minFilter = gl.LINEAR_MIPMAP_LINEAR
+  envMap.magFilter = gl.LINEAR
+
   const noiseMap = useLoader(TextureLoader, "/textures/noise-LDR_RGBA_63.png")
 
   const geometry = useMemo(() => {
@@ -39,8 +50,6 @@ export function Scene() {
   useEffect(() => {
     setActiveCamera("custom")
   }, [setActiveCamera])
-
-  const gl = useOGL((s) => s.gl)
 
   const cameraTarget = useMemo(() => new Vec3(0, 0.3, 0), [])
 
@@ -73,6 +82,7 @@ export function Scene() {
   const insideProgram = useMemo(() => {
     const program = getInsideProgram(gl)
     program.uniforms.uEnvMap = { value: envMap }
+    program.uniforms.uModelScale = { value: 1.0 }
     return program
   }, [gl, envMap])
 
@@ -94,6 +104,10 @@ export function Scene() {
     program.uniforms.uInsideNormalTexture = { value: insideTarget.textures[1] }
     program.uniforms.uNear = { value: camera.near }
     program.uniforms.uFar = { value: camera.far }
+    program.uniforms.uModelScale = { value: INSIDE_MODEL_SCALE }
+
+    // lights
+    program.uniforms.uEnvMap = { value: envMap }
     return program
   }, [gl, camera, insideTarget])
 
@@ -170,9 +184,6 @@ export function Scene() {
     program.uniforms.uNear = { value: camera.near }
     program.uniforms.uFar = { value: camera.far }
 
-    // lights
-    program.uniforms.uEnvMap = { value: envMap }
-
     // others
     program.uniforms.uTime = { value: 0 }
     program.uniforms.uNoise = { value: noiseMap }
@@ -191,6 +202,8 @@ export function Scene() {
   useFrame((_, time) => {
     const pyramid = meshRef.current
     if (!pyramid) return
+
+    insideProgram.uniforms.uModelScale.value = INSIDE_MODEL_SCALE
 
     renderer.gl.scissor(
       DEFAULT_SCISSOR.x,
@@ -226,6 +239,8 @@ export function Scene() {
     })
 
     // RENDER: outside
+
+    insideProgram.uniforms.uModelScale.value = OUTSIDE_MODEL_SCALE
 
     gl.clearColor(0, 0, 0, 0)
 
