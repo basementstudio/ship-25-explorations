@@ -1,4 +1,4 @@
-#pragma glslify: getVogel = require('./get-vogel.glsl')
+#pragma glslify: getVogel = require('../../glsl-shared/get-vogel.glsl')
 
 const int totalSamples = 128;
 

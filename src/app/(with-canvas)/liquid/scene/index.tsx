@@ -1,17 +1,31 @@
-import { Camera, GLTFLoader, Mesh, RenderTarget } from "ogl"
+import { folder as levaFolder, useControls } from "leva"
+import {
+  Camera,
+  GLTFLoader,
+  Mesh,
+  RenderTarget,
+  TextureLoader,
+  Transform,
+  Vec3
+} from "ogl"
 import { useEffect, useMemo, useRef } from "react"
-import { useFrame, useLoader, useOGL } from "react-ogl"
+import { createPortal, useFrame, useLoader, useOGL } from "react-ogl"
 
 import { DEFAULT_SCISSOR } from "~/gl"
 import { OrbitHelper } from "~/gl/components/devex/orbit"
+import { QuadGeometry } from "~/gl/components/quad"
 import { useGlControls } from "~/gl/hooks/use-gl-controls"
 
-import { getGlassProgram } from "../glass-program"
 import { getInsideProgram } from "../inside-program"
+import { getMapDebugProgram } from "../map-debug-program"
+import { getPostProgram } from "../post-program"
 import { getRaymarchProgram } from "../raymarch-program"
+import { DebugTextures } from "./debug-textures"
 
 export function Scene() {
   const gltf = useLoader(GLTFLoader, "/models/nico-triangle.glb")
+  const envMap = useLoader(TextureLoader, "/textures/flauta-hdri.png")
+  const noiseMap = useLoader(TextureLoader, "/textures/noise-LDR_RGBA_63.png")
 
   const geometry = useMemo(() => {
     const baseMesh = gltf.meshes[0].primitives[0] as any as Mesh
@@ -28,13 +42,15 @@ export function Scene() {
 
   const gl = useOGL((s) => s.gl)
 
+  const cameraTarget = useMemo(() => new Vec3(0, 0.3, 0), [])
+
   const camera = useMemo(() => {
     const camera = new Camera(gl).perspective({
-      near: 0.5,
-      far: 10,
-      fov: 30
+      near: 1,
+      far: 20,
+      fov: 10
     })
-    camera.position.set(0, 0, 6)
+    camera.position.set(-5, 3, 5)
     return camera
   }, [gl])
 
@@ -54,6 +70,12 @@ export function Scene() {
     return target
   }, [gl])
 
+  const insideProgram = useMemo(() => {
+    const program = getInsideProgram(gl)
+    program.uniforms.uEnvMap = { value: envMap }
+    return program
+  }, [gl, envMap])
+
   const raymarchTarget = useMemo(() => {
     const target = new RenderTarget(gl, {
       width: 1024,
@@ -64,15 +86,10 @@ export function Scene() {
     return target
   }, [gl])
 
-  const insideProgram = useMemo(() => {
-    const program = getInsideProgram(gl)
-    return program
-  }, [gl])
-
   const raymarchProgram = useMemo(() => {
     const program = getRaymarchProgram(gl)
     program.uniforms.time = { value: 0.0 }
-    program.uniforms.cPos = { value: camera.position }
+    // program.uniforms.cPos = { value: camera.position }
     program.uniforms.uInsideDepthTexture = { value: insideTarget.textures[0] }
     program.uniforms.uInsideNormalTexture = { value: insideTarget.textures[1] }
     program.uniforms.uNear = { value: camera.near }
@@ -80,30 +97,96 @@ export function Scene() {
     return program
   }, [gl, camera, insideTarget])
 
-  const glassProgram = useMemo(() => {
-    const program = getGlassProgram(gl)
+  const outsideTarget = useMemo(() => {
+    const target = new RenderTarget(gl, {
+      width: 1024,
+      height: 1024,
+      color: 2
+    })
+    return target
+  }, [gl])
 
-    program.uniforms.uRaymarchTexture = { value: raymarchTarget.texture }
-    program.uniforms.uDepthTexture = { value: raymarchTarget.depthTexture }
-    return program
-  }, [gl, raymarchTarget])
+  // const outsideProgram = useMemo(() => {
+  //   const program = getGlassProgram(gl)
+
+  //   program.uniforms.uRaymarchTexture = { value: raymarchTarget.texture }
+  //   program.uniforms.uDepthTexture = { value: raymarchTarget.depthTexture }
+  //   return program
+  // }, [gl, raymarchTarget])
 
   const canvas = useOGL((s) => s.gl.canvas) as HTMLCanvasElement
 
+  const finalPassTarget = useMemo(() => {
+    const target = new RenderTarget(gl, {
+      width: 1024,
+      height: 1024
+    })
+    return target
+  }, [gl])
+
   useEffect(() => {
     const handleResize = () => {
+      raymarchTarget.setSize(canvas.width, canvas.height)
       const width = Math.ceil(canvas.width / 1)
       const height = Math.ceil(canvas.height / 1)
-      raymarchTarget.setSize(width, height)
-      glassProgram.uniforms.uRaymarchTexture.value = raymarchTarget.texture
       insideTarget.setSize(width, height)
+      outsideTarget.setSize(width, height)
+      raymarchTarget.setSize(width, height)
+      finalPassTarget.setSize(width, height)
     }
     window.addEventListener("resize", handleResize)
     handleResize()
     return () => {
       window.removeEventListener("resize", handleResize)
     }
-  }, [canvas, raymarchTarget, glassProgram, insideTarget])
+  }, [canvas, raymarchTarget, insideTarget, outsideTarget, finalPassTarget])
+
+  const postScene = useMemo(() => {
+    return new Transform()
+  }, [])
+
+  const postProgram = useMemo(() => {
+    const program = getPostProgram(gl)
+
+    // inside data
+    program.uniforms.uInsideDepthTexture = { value: insideTarget.textures[0] }
+    program.uniforms.uInsideColorTexture = { value: insideTarget.textures[1] }
+
+    // outside data
+    program.uniforms.uOutsideDepthTexture = {
+      value: outsideTarget.textures[0]
+    }
+    program.uniforms.uOutsideColorTexture = {
+      value: outsideTarget.textures[1]
+    }
+
+    // raymarch data
+    program.uniforms.uRaymarchTexture = { value: raymarchTarget.texture }
+    program.uniforms.uRaymarchDepthTexture = {
+      value: raymarchTarget.depthTexture
+    }
+
+    // camera data
+    program.uniforms.uNear = { value: camera.near }
+    program.uniforms.uFar = { value: camera.far }
+
+    // lights
+    program.uniforms.uEnvMap = { value: envMap }
+
+    // others
+    program.uniforms.uTime = { value: 0 }
+    program.uniforms.uNoise = { value: noiseMap }
+
+    return program
+  }, [
+    gl,
+    camera,
+    insideTarget,
+    raymarchTarget,
+    outsideTarget,
+    envMap,
+    noiseMap
+  ])
 
   useFrame((_, time) => {
     const pyramid = meshRef.current
@@ -120,6 +203,7 @@ export function Scene() {
     gl.clearColor(0, 0, 0, 0)
 
     pyramid.program = insideProgram
+    pyramid.program.cullFace = gl.FRONT
 
     renderer.render({
       scene: scene,
@@ -128,13 +212,12 @@ export function Scene() {
     })
 
     // RENDER: raymarch
-    gl.clearColor(1, 1, 1, 1)
+    gl.clearColor(0, 0, 0, 0)
 
     // set raymarch material
     pyramid.program = raymarchProgram
 
     raymarchProgram.uniforms.time.value = time * 0.0001
-    raymarchProgram.uniforms.cPos.value = camera.position
 
     renderer.render({
       scene: scene,
@@ -142,31 +225,72 @@ export function Scene() {
       target: raymarchTarget
     })
 
-    // RENDER: glass
+    // RENDER: outside
 
+    gl.clearColor(0, 0, 0, 0)
+
+    // set outside material
+    pyramid.program = insideProgram
+    insideProgram.cullFace = gl.BACK
+
+    renderer.render({
+      scene: scene,
+      camera: camera,
+      target: outsideTarget
+    })
+
+    // RENDER: postprocessing, final pass
     const clearColor = 0.85
 
     gl.clearColor(clearColor, clearColor, clearColor, 1)
 
-    // set default material back
-    pyramid.program = glassProgram
+    pyramid.program = postProgram
 
     renderer.render({
-      scene: scene,
-      camera: camera
+      scene: postScene,
+      camera: camera,
+      target: finalPassTarget
     })
   })
 
+  const { debugTargets } = useControls({
+    Liquid: levaFolder({
+      debugTargets: {
+        value: false
+      }
+    })
+  })
+
+  const debugTextures = [
+    insideTarget.textures[0],
+    insideTarget.textures[1],
+    outsideTarget.textures[0],
+    outsideTarget.textures[1],
+    raymarchTarget.texture,
+    raymarchTarget.depthTexture,
+    finalPassTarget.texture
+  ]
+
   return (
     <>
-      <OrbitHelper isActive={true} camera={camera} />
-      <mesh ref={meshRef}>
-        <primitive object={geometry} />
-        {/* <cylinder /> */}
-        <primitive object={glassProgram} />
-      </mesh>
-      {/* <transform rotation={[Math.PI * 0.1, 0, 0]} position={[0, -0.35, 0]}>
-      </transform> */}
+      <DebugTextures
+        textures={debugTextures}
+        fullScreen={debugTargets ? undefined : debugTextures.length - 1}
+      />
+      {createPortal(
+        <mesh>
+          <QuadGeometry />
+          <primitive object={postProgram} />
+        </mesh>,
+        postScene
+      )}
+      <OrbitHelper isActive={true} camera={camera} target={cameraTarget} />
+      <transform position={[0, 0, 0]}>
+        <mesh ref={meshRef}>
+          <primitive object={geometry} />
+          {/* <sphere args={[1, 32, 32]} /> */}
+        </mesh>
+      </transform>
     </>
   )
 }

@@ -22,15 +22,13 @@ float normalScale = 0.05;
 
 float getSpecular() {
   vec2 surfaceNormal = getSurfaceNormal(vUv);
-  vec3 rotatedNormal = rotateVector2(
-    normalize(vNormal),
-    surfaceNormal * normalScale
-  );
 
-  float lambert = max(0.0, dot(lightDirection, rotatedNormal));
+  vec3 normal = normalize(vNormal);
+
+  float lambert = max(0.0, dot(lightDirection, normal));
 
   float specularExponent = pow(2.0, glossiness * 10.0) + 10.0;
-  float specular = dot(rotatedNormal, lightDirection);
+  float specular = dot(normal, lightDirection);
   specular = abs(specular);
   specular = pow(specular, specularExponent);
   specular = specular * smoothstep(0.0, 1.0, lambert * 2.0);
