@@ -20,6 +20,7 @@ import { getInsideProgram } from "../inside-program"
 import { getPostProgram } from "../post-program"
 import { getRaymarchProgram } from "../raymarch-program"
 import { DebugTextures } from "./debug-textures"
+import { valueRemap } from "~/lib/utils/math"
 
 const INSIDE_MODEL_SCALE = 0.97
 const OUTSIDE_MODEL_SCALE = 1.0
@@ -36,6 +37,10 @@ export function Scene() {
   envMap.magFilter = gl.LINEAR
 
   const noiseMap = useLoader(TextureLoader, "/textures/noise-LDR_RGBA_63.png")
+  noiseMap.wrapS = gl.REPEAT
+  noiseMap.wrapT = gl.REPEAT
+  noiseMap.minFilter = gl.LINEAR_MIPMAP_LINEAR
+  noiseMap.magFilter = gl.LINEAR
 
   const geometry = useMemo(() => {
     const baseMesh = gltf.meshes[0].primitives[0] as any as Mesh
@@ -50,15 +55,15 @@ export function Scene() {
     setActiveCamera("custom")
   }, [setActiveCamera])
 
-  const cameraTarget = useMemo(() => new Vec3(0, 0.3, 0), [])
+  const cameraTarget = useMemo(() => new Vec3(0, 0.25, 0), [])
 
   const camera = useMemo(() => {
     const camera = new Camera(gl).perspective({
-      near: 1,
-      far: 20,
+      near: 4,
+      far: 15,
       fov: 10
     })
-    camera.position.set(-4, 3, 6)
+    camera.position.set(0, 6, 8)
     return camera
   }, [gl])
 
@@ -165,6 +170,7 @@ export function Scene() {
     // camera data
     program.uniforms.uNear = { value: camera.near }
     program.uniforms.uFar = { value: camera.far }
+    program.uniforms.focusCenter = { value: 0.3 }
 
     // others
     program.uniforms.uTime = { value: 0 }
@@ -212,9 +218,16 @@ export function Scene() {
     postProgram
   ])
 
+  const tmp = useMemo(() => new Vec3(), [])
+
   useFrame((_, time) => {
     const pyramid = meshRef.current
     if (!pyramid) return
+
+    const distanceToTarget = tmp.copy(camera.position).distance(cameraTarget)
+    const focus = (distanceToTarget - camera.near) / (camera.far - camera.near)
+
+    postProgram.uniforms.focusCenter.value = focus
 
     insideProgram.uniforms.uModelScale.value = INSIDE_MODEL_SCALE
 
