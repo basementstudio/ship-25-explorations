@@ -11,11 +11,14 @@ import { useGlControls } from "../hooks/use-gl-controls"
 import { RenderLoop } from "../render-loop"
 import { DebugStateMessages } from "./devex/debug-messages"
 import { Helpers } from "./devex/helpers"
+import { useGlobalMouseCallback } from "~/hooks/use-mouse-move"
 
 /** Canvas with main scene */
 const PageCanvas = () => {
   const { hasRendered } = useGlControls()
   const isDebug = useAppStore((s) => s.isDebug)
+
+  useGlobalMouseCallback()
 
   return (
     <div

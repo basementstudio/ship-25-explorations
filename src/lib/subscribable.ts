@@ -16,7 +16,7 @@ export const subscribable = <
   const callbacks: Record<string, T> = {}
 
   const addCallback = (callback: T, id: string): string => {
-    const _id = id || nanoid(4)
+    const _id = id || crypto.randomUUID()
     callbacks[_id] = callback
     return _id
   }

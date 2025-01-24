@@ -12,7 +12,8 @@ const navLinks: HeaderLink[] = [
   { name: "fluid-solidify", url: "/fluid-solidify" },
   { name: "depth", url: "/depth" },
   { name: "pyramid", url: "/pyramid" },
-  { name: "liquid", url: "/liquid" }
+  { name: "liquid", url: "/liquid" },
+  { name: "interaction", url: "/interaction" }
 ]
 
 export const Header = () => {
