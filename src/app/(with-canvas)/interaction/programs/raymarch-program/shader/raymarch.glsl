@@ -1,6 +1,6 @@
 #pragma glslify: getSurface = require('./get-surface.glsl', time=time, texture = texture)
 #pragma glslify: structsModule = require('./structs.glsl', RayResult=RayResult)
-#pragma glslify: getSceneHit = require('./get-scene-hit.glsl', time=time)
+#pragma glslify: getSceneHit = require('./get-scene-hit.glsl', time=time, texture = texture)
 
 const float SURFACE_DIST = 0.001;
 const int MAX_STEPS = 200;

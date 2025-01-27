@@ -1,4 +1,4 @@
-#pragma glslify: getSceneHit = require('./get-scene-hit.glsl', time = time)
+#pragma glslify: getSceneHit = require('./get-scene-hit.glsl', time = time, texture = texture)
 #pragma glslify: getEnvColor = require('../../glsl-shared/get-env-color.glsl', texture = texture)
 
 uniform sampler2D uEnvMap;

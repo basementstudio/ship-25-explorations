@@ -1,5 +1,5 @@
 import { folder as levaFolder, useControls } from "leva"
-import { Camera, Mesh, RenderTarget, Transform, Vec3 } from "ogl"
+import { Camera, Mesh, RenderTarget, Transform, Vec2, Vec3 } from "ogl"
 import { useEffect, useMemo, useRef } from "react"
 import { createPortal, useFrame, useOGL } from "react-ogl"
 
@@ -14,10 +14,10 @@ import { useTargets } from "./use-targets"
 import { usePrograms } from "./use-programs"
 import { INSIDE_MODEL_SCALE, OUTSIDE_MODEL_SCALE } from "./constants"
 import { useHit } from "./use-hit"
+import { useRenderCopy } from "./use-render-copy"
 
 export function Scene() {
   const gl = useOGL((s) => s.gl)
-  const globalScene = useOGL((s) => s.scene)
   const renderer = useOGL((s) => s.renderer)
 
   const assets = useAssets(gl)
@@ -44,11 +44,17 @@ export function Scene() {
   const meshRef = useRef<Mesh | null>(null)
 
   const targets = useTargets(gl)
-  const { insideTarget, raymarchTarget, outsideTarget, finalPassTarget } =
-    targets
+  const {
+    insideTarget,
+    raymarchTarget,
+    outsideTarget,
+    finalPassTarget,
+    flowTargetA,
+    flowTargetB
+  } = targets
 
   const programs = usePrograms(gl, targets, assets, camera)
-  const { insideProgram, raymarchProgram } = programs
+  const { insideProgram, raymarchProgram, flowProgram } = programs
 
   const canvas = useOGL((s) => s.gl.canvas) as HTMLCanvasElement
 
@@ -61,6 +67,10 @@ export function Scene() {
   }, [])
 
   const planeScene = useMemo(() => {
+    return new Transform()
+  }, [])
+
+  const flowScene = useMemo(() => {
     return new Transform()
   }, [])
 
@@ -138,7 +148,9 @@ export function Scene() {
 
   const hitData = useMemo(
     () => ({
-      position: new Vec3()
+      uv: new Vec2(),
+      position: new Vec3(),
+      smoothPosition: new Vec3()
     }),
     []
   )
@@ -150,12 +162,18 @@ export function Scene() {
     meshRef: raycastMeshRef,
     onIntersect: (hit) => {
       hitData.position.copy(hit.point)
+      hitData.uv.copy(hit.uv) //scale
+      // console.log(hitData.uv)
     }
   })
+
+  const renderCopy = useRenderCopy(gl)
 
   useFrame((_, time) => {
     const pyramid = meshRef.current
     if (!pyramid) return
+
+    hitData.smoothPosition.lerp(hitData.position, 0.1)
 
     // debug render
     renderer.render({
@@ -164,8 +182,22 @@ export function Scene() {
       target: planeDebugTarget
     })
 
+    // console.log(flowTargets.targetWrite.texture.id)
+
+    // render flow
+    flowProgram.uniforms.uMouse.value.copy(hitData.uv)
+    // console.log(flowProgram.uniforms.uMouse.value)
+
+    renderer.render({
+      camera,
+      scene: flowScene,
+      target: flowTargetB
+    })
+
+    renderCopy(flowTargetB.texture, flowTargetA)
+
     // update mouse effect
-    raymarchProgram.uniforms.uHitPosition.value.lerp(hitData.position, 0.1)
+    raymarchProgram.uniforms.uHitPosition.value.copy(hitData.smoothPosition)
     insideProgram.uniforms.uModelScale.value = INSIDE_MODEL_SCALE
 
     // update focus
@@ -241,14 +273,6 @@ export function Scene() {
     })
   })
 
-  const { debugTargets } = useControls({
-    Interaction: levaFolder({
-      debugTargets: {
-        value: false
-      }
-    })
-  })
-
   const planeDebugTarget = useMemo(() => {
     const target = new RenderTarget(gl, {
       width: 1024 / 2,
@@ -257,24 +281,21 @@ export function Scene() {
     return target
   }, [gl])
 
-  const debugTextures = [
-    insideTarget.textures[0],
-    insideTarget.textures[1],
-    outsideTarget.textures[0],
-    outsideTarget.textures[1],
-    raymarchTarget.textures[0],
-    raymarchTarget.textures[1],
-    planeDebugTarget.texture,
-    finalPassTarget.texture
-  ]
+  const debugTextures = {
+    inside: insideTarget.textures[0],
+    insideColor: insideTarget.textures[1],
+    outside: outsideTarget.textures[0],
+    outsideColor: outsideTarget.textures[1],
+    raymarch: raymarchTarget.textures[0],
+    raymarchDepth: raymarchTarget.textures[1],
+    plane: planeDebugTarget.texture,
+    flow: flowTargetB.texture,
+    screen: finalPassTarget.texture
+  }
 
   return (
     <>
-      <DebugTextures
-        textures={debugTextures}
-        fullScreen={debugTargets ? undefined : debugTextures.length - 1}
-        // fullScreen={0}
-      />
+      <DebugTextures textures={debugTextures} />
       {createPortal(
         <mesh>
           <QuadGeometry />
@@ -291,19 +312,34 @@ export function Scene() {
         </transform>,
         pyramidScene
       )}
+      {createPortal(
+        <mesh>
+          <QuadGeometry />
+          <primitive object={flowProgram} />
+        </mesh>,
+        flowScene
+      )}
 
       <OrbitHelper isActive={true} camera={camera} target={cameraTarget} />
 
       {createPortal(
-        <mesh
-          ref={raycastMeshRef}
-          rotation={[-Math.PI / 2, 0, 0]}
-          scale={10}
-          position={[0, 0, 0]}
-        >
-          <plane />
-          <normalProgram />
-        </mesh>,
+        <>
+          <mesh
+            ref={raycastMeshRef}
+            rotation={[-Math.PI / 2, 0, 0]}
+            scale={2}
+            position={[0, 0, 0]}
+          >
+            <plane />
+            <normalProgram />
+          </mesh>
+          <transform scale={[0.7, 0.7, 0.7]} position={[0, 0.4, 0]}>
+            <mesh>
+              <primitive object={geometry} />
+              <normalProgram />
+            </mesh>
+          </transform>
+        </>,
         planeScene
       )}
     </>
