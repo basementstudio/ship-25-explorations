@@ -13,7 +13,8 @@ const navLinks: HeaderLink[] = [
   { name: "depth", url: "/depth" },
   { name: "pyramid", url: "/pyramid" },
   { name: "liquid", url: "/liquid" },
-  { name: "interaction", url: "/interaction" }
+  { name: "interaction", url: "/interaction" },
+  { name: "morph", url: "/morph" }
 ]
 
 export const Header = () => {

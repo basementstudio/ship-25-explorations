@@ -1,5 +1,3 @@
-import { nanoid } from "nanoid"
-
 export interface Subscribable<T extends Function = () => void> {
   addCallback: (callback: T, id?: string) => string
   removeCallback: (id: string | T) => void

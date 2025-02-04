@@ -70,10 +70,10 @@ float getSceneHit(vec3 p) {
   float floorPlane = sdPlane(floorP, vec4(0.0, 1.0, 0.0, 0.0));
 
   vec3 cubeCenter = projectedMousePos;
-  cubeCenter.y += 0.2;
-  float cube = sdSphere(Translate(p, cubeCenter), 0.05);
+  cubeCenter.y += 0.1;
+  float cube = sdSphere(Translate(p, cubeCenter), 0.1);
 
-  return min(floorPlane, cube);
+  return opSmoothUnion(floorPlane, cube, 0.1);
 }
 
 #pragma glslify: surfaceModule = require('./surface.glsl', getSurfaceLight=getSurfaceLight, getSceneHit=getSceneHit, SurfaceResult=SurfaceResult, RayHit=RayHit, Material=Material, mainColor=mainColor, matcapMap=matcapMap, reflectionMap=reflectionMap, reflectionIntensity=reflectionIntensity, lightDirection=lightDirection, glossiness=glossiness, lightIntensity=lightIntensity)
