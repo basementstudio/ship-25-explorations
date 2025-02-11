@@ -17,6 +17,18 @@ vec3 getNormal(vec3 p) {
 
 vec3 mainColor = vec3(0.1);
 
+vec3 lightDirection = normalize(vec3(0.0, 1.0, 1.0));
+
+vec3 getLight(vec3 p, vec3 reflectedNormal) {
+  float lambert = dot(reflectedNormal, lightDirection);
+  lambert = clamp(lambert, 0.0, 1.0) * 0.2;
+
+  float pl = clamp(1.7 + p.z, 0.0, 1.0);
+  lambert *= pl;
+
+  return vec3(lambert);
+}
+
 vec3 getSurface(vec3 p, vec3 rayDirection) {
   vec3 viewDir = -rayDirection;
   vec3 normal = getNormal(p);
@@ -24,6 +36,8 @@ vec3 getSurface(vec3 p, vec3 rayDirection) {
   vec3 reflectedNormal = reflect(viewDir, normal);
 
   vec3 light = getEnvColor(uEnvMap, reflectedNormal, viewDir);
+
+  light += getLight(p, reflectedNormal);
 
   return light;
 }

@@ -79,7 +79,10 @@ vec2 getVogel(float i, float totalSamples, float rotation) {
 }
 
 void main() {
-  vec3 color = texture(uRaymarchTexture, vUv).rgb;
+  vec3 color = vec3(0.0);
+  vec4 raymarchSample = texture(uRaymarchTexture, vUv);
+
+  color = mix(color, raymarchSample.rgb, raymarchSample.a);
   fragColor = vec4(color, 1.0);
 }
 

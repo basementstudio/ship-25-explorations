@@ -235,18 +235,21 @@ float getSceneHit(vec3 p) {
   vec3 pPlane = p - vec3(0.0, planeY, 0.0);
   float plane = sdPlane(pPlane);
 
-  float normalMixer = cos(time * 5.0) * 0.5 + 0.5;
-  normalMixer = gain(normalMixer, 3.0);
+  return plane;
 
-  float orbeHit = getOrbeHit(p);
+  // float normalMixer = cos(time * 5.0) * 0.5 + 0.5;
+  // normalMixer = gain(normalMixer, 3.0);
 
-  float hit;
+  // float orbeHit = getOrbeHit(p);
 
-  hit = orbeHit;
+  // float hit;
 
-  hit = opSmoothUnion(hit, plane, 0.2);
+  // hit = orbeHit;
 
-  return hit;
+  // hit = opSmoothUnion(hit, plane, 0.2);
+
+  // return hit;
+
 }
 
 #pragma glslify: export(getSceneHit)

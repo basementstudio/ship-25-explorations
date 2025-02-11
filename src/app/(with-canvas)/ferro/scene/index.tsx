@@ -28,7 +28,7 @@ export function Scene() {
     setActiveCamera("custom")
   }, [setActiveCamera])
 
-  const cameraTarget = useMemo(() => new Vec3(0, 0.25, 0), [])
+  const cameraTarget = useMemo(() => new Vec3(0, 0, 0), [])
 
   const camera = useMemo(() => {
     const camera = new Camera(gl).perspective({
@@ -36,7 +36,7 @@ export function Scene() {
       far: 7,
       fov: 10
     })
-    camera.position.set(0, 1, 5)
+    camera.position.set(0, 2, 5)
     return camera
   }, [gl])
 
