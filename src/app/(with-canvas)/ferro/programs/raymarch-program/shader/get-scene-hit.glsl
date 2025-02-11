@@ -208,9 +208,6 @@ float getSinCos(vec3 pos, float flow) {
   dist2 = max(dist2, 0.0);
   p.xz -= direction.xz * shiftInlfuence * dist2 * 0.1;
 
-  // compress to form a circle
-  // p.xz *= clamp(pow(dist, 2.0), 1.0, 3.0);
-
   p += uHitPosition;
 
   p += uHitPosition * 0.2;

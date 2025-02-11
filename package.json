@@ -26,6 +26,7 @@
     "eslint-plugin-prettier": "^5.2.1",
     "eslint-plugin-simple-import-sort": "^12.1.1",
     "glsl-constants": "^2.0.1",
+    "glsl-fxaa": "^3.0.0",
     "glsl-noise": "^0.0.0",
     "glslify": "^7.1.1",
     "gsap": "^3.12.5",
