@@ -1,3 +1,5 @@
+import { Geometry } from "ogl"
+import { forwardRef } from "react"
 import { OGLElements } from "react-ogl"
 
 // Single triangle that covers the entire screen (-1 to 1 space)
@@ -7,16 +9,19 @@ const uvData = new Float32Array([0, 0, 2, 0, 0, 2])
 // No index buffer needed for a single triangle
 const indexData = new Uint16Array([0, 1, 2])
 
-export function QuadGeometry(props: OGLElements["geometry"]) {
-  return (
-    <geometry
-      position={{
-        size: 3,
-        data: positionData
-      }}
-      uv={{ size: 2, data: uvData }}
-      index={{ data: indexData }}
-      {...(props as any)}
-    />
-  )
-}
+export const QuadGeometry = forwardRef<Geometry, OGLElements["geometry"]>(
+  (props, ref) => {
+    return (
+      <geometry
+        ref={ref}
+        position={{
+          size: 3,
+          data: positionData
+        }}
+        uv={{ size: 2, data: uvData }}
+        index={{ data: indexData }}
+        {...(props as any)}
+      />
+    )
+  }
+)
