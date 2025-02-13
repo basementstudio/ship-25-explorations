@@ -73,7 +73,7 @@ float getSceneHit(vec3 p) {
   cubeCenter.y += 0.1;
   float cube = sdSphere(Translate(p, cubeCenter), 0.1);
 
-  return opSmoothUnion(floorPlane, cube, 0.1);
+  return floorPlane;
 }
 
 #pragma glslify: surfaceModule = require('./surface.glsl', getSurfaceLight=getSurfaceLight, getSceneHit=getSceneHit, SurfaceResult=SurfaceResult, RayHit=RayHit, Material=Material, mainColor=mainColor, matcapMap=matcapMap, reflectionMap=reflectionMap, reflectionIntensity=reflectionIntensity, lightDirection=lightDirection, glossiness=glossiness, lightIntensity=lightIntensity)

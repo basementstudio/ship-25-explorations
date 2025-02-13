@@ -3,6 +3,7 @@ import { Camera, OGLRenderingContext, Vec2, Vec3 } from "ogl"
 import { useMemo } from "react"
 
 import { getFlowProgram } from "../programs/flow-program"
+import { getParticlesProgram } from "../programs/particles-program"
 import { getRaymarchProgram } from "../programs/raymarch-program"
 import { Assets } from "./use-assets"
 import { ProgramTargets } from "./use-targets"
@@ -24,6 +25,11 @@ export function usePrograms(
     return program
   }, [gl, targets.flowTargetA])
 
+  const particlesProgram = useMemo(() => {
+    const program = getParticlesProgram(gl)
+    return program
+  }, [gl])
+
   const raymarchProgram = useMemo(() => {
     const program = getRaymarchProgram(gl)
     program.uniforms.time = { value: 0.0 }
@@ -39,7 +45,6 @@ export function usePrograms(
       value: new Vec2(gl.canvas.width, gl.canvas.height)
     }
     program.uniforms.pyramidReveal = { value: 1.0 }
-    program.uniforms.mouseSpeed = { value: 0.0 }
 
     // lights
     program.uniforms.uEnvMap = { value: assets.envMap }
@@ -49,13 +54,14 @@ export function usePrograms(
   const programs = useMemo(() => {
     return {
       raymarchProgram,
-      flowProgram
+      flowProgram,
+      particlesProgram
     }
-  }, [raymarchProgram, flowProgram])
+  }, [raymarchProgram, flowProgram, particlesProgram])
 
   useControls({
     pyramidReveal: {
-      value: 0,
+      value: 1.0,
       min: 0.0,
       max: 1.0,
       onChange: (value) => {

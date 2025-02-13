@@ -7,8 +7,6 @@ uniform float noiseScale;
 uniform float noiseLength;
 uniform sampler2D uFlowTexture;
 uniform float pyramidReveal;
-uniform sampler2D uNoiseTexture;
-uniform float mouseSpeed;
 
 uniform mat4 uPyramidMatrix;
 
@@ -163,8 +161,6 @@ vec3 rotateVector(vec3 v, vec4 q) {
   return qmul(qv, qinv).xyz;
 }
 
-#pragma glslify: unpackRGB = require('../../glsl-shared/unpack-rgb')
-
 float getFlowHit(vec3 p) {
   vec2 uv = p.xz;
   uv += 2.0;
@@ -178,7 +174,7 @@ float getFlowHit(vec3 p) {
   edge *= smoothstep(0.0, 0.1, uv.y);
   edge *= smoothstep(1.0, 0.9, uv.x);
   edge *= smoothstep(1.0, 0.9, uv.y);
-  return unpackRGB(flow.xyz) * edge;
+  return flow.r * edge;
 }
 
 float tetrahedron(vec3 p, float size) {
@@ -190,8 +186,8 @@ float tetrahedron(vec3 p, float size) {
 
 float getOrbeHit(vec3 p) {
   vec3 orbeP = p;
-  float pyramidMinP = -0.8;
-  float pyramidMaxP = 0.0;
+  float pyramidMinP = -0.6;
+  float pyramidMaxP = 0.3;
   float reveal = mix(pyramidMinP, pyramidMaxP, pyramidReveal);
   orbeP -= vec3(0.0, reveal, 0.0);
   float scale = 0.2;
@@ -199,13 +195,13 @@ float getOrbeHit(vec3 p) {
   return tetrahedron(orbeP, 0.2);
 }
 
-float getSpikes(vec3 pos, float flow) {
+float getSinCos(vec3 pos, float flow) {
   vec3 p = pos;
 
   float shiftInlfuence = p.y * 10.0;
 
   p -= uHitPosition;
-  float dist = length(p) * 2.0;
+  float dist = length(p);
   vec3 direction = normalize(p);
 
   float dist2 = dist - 0.01;
@@ -215,72 +211,41 @@ float getSpikes(vec3 pos, float flow) {
   p += uHitPosition;
 
   p += uHitPosition * 0.2;
-  float sinCos = sin(p.x * 60.0) * cos(p.z * 60.0);
+  float sinCos = sin(p.x * 40.0) * cos(p.z * 40.0);
   return sinCos;
-}
-
-float getNoise2(vec3 p) {
-  float n = cnoise4d(vec4(p * 5.0, time * 2.0));
-  return n;
-}
-
-// float getNoise3(vec3 p) {
-//   float n = cnoise4d(vec4(p * 10.0, time * 10.0));
-//   return n;
-// }
-
-float getCircleSin(vec3 p) {
-  float d = distance(p, uHitPosition * 0.5);
-  float s = sin(d * 30.0);
-  return s * 0.5 + 0.5;
 }
 
 float getSceneHit(vec3 p) {
   float planeY = 0.0;
-  float flow = getFlowHit(p);
-  float clampFlow = clamp(flow, 0.0, 1.0);
+  float flow0 = getFlowHit(p);
+  float flow = flow0;
 
-  float ferroFlow = smoothstep(0.7, 1.0, flow);
+  float sinCos = getSinCos(p, flow);
+  flow = smoothstep(0.0, 0.2, flow) * sinCos * 0.5;
+  flow *= 0.1;
 
-  float spikes = getSpikes(p, flow);
-  spikes = ferroFlow * spikes * 0.5;
-  spikes *= 0.1;
+  float f1 = pow(flow0, 0.5) * smoothstep(0.0, 1.0, flow0);
+  flow += f1 * 0.2;
 
-  float bubble = smoothstep(0.7, 1.0, flow) * 0.05;
-  planeY += spikes + bubble;
-
-  float circleSin = getCircleSin(p);
-
-  float noise = 0.0;
-  noise += getNoise2(p);
-  // remap flow from 0 to 1 to 0-1-0
-  noise *= cos(clampFlow * PI * 2.0 + PI) * 0.5 + 0.5;
-  noise *= circleSin;
-  noise *= mouseSpeed;
-  planeY += noise * 0.1;
+  planeY += flow;
 
   vec3 pPlane = p - vec3(0.0, planeY, 0.0);
   float plane = sdPlane(pPlane);
 
-  // return plane;
+  return plane;
 
-  float normalMixer = cos(time * 5.0) * 0.5 + 0.5;
-  normalMixer = gain(normalMixer, 3.0);
+  // float normalMixer = cos(time * 5.0) * 0.5 + 0.5;
+  // normalMixer = gain(normalMixer, 3.0);
 
-  float orbeHit = getOrbeHit(p);
+  // float orbeHit = getOrbeHit(p);
 
-  float hit;
+  // float hit;
 
   // hit = orbeHit;
 
-  hit = mix3(
-    plane,
-    opSmoothUnion(plane, orbeHit, 0.5) + getNoise2(p) * 0.05,
-    orbeHit,
-    pyramidReveal
-  );
+  // hit = opSmoothUnion(hit, plane, 0.2);
 
-  return hit;
+  // return hit;
 
 }
 

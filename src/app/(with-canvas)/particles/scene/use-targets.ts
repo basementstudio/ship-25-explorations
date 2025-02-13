@@ -3,8 +3,6 @@ import { useMemo } from "react"
 
 export type ProgramTargets = ReturnType<typeof useTargets>
 
-const flowSize = 2 * 2 * 2 * 2 * 2 * 2 * 2
-
 export function useTargets(gl: OGLRenderingContext) {
   const raymarchTarget = useMemo(() => {
     const target = new RenderTarget(gl, {
@@ -13,6 +11,15 @@ export function useTargets(gl: OGLRenderingContext) {
       height: 1024
     })
 
+    return target
+  }, [gl])
+
+  const particlesTarget = useMemo(() => {
+    const target = new RenderTarget(gl, {
+      width: 1024,
+      height: 1024,
+      depth: false
+    })
     return target
   }, [gl])
 
@@ -26,28 +33,26 @@ export function useTargets(gl: OGLRenderingContext) {
 
   const flowTargetA = useMemo(() => {
     const target = new RenderTarget(gl, {
-      width: flowSize,
-      height: flowSize,
-      // type: gl.FLOAT, // FLOAT_TYPE
-      // internalFormat: 0x8815, // RGB32F
-      // format: 0x1907, // RGB_FORMAT,
+      width: 154,
+      height: 154,
+      type: gl.FLOAT, // FLOAT_TYPE
+      internalFormat: 0x822e, // R32F
+      format: 0x1903, // RED_FORMAT,
       wrapS: gl.CLAMP_TO_EDGE,
-      wrapT: gl.CLAMP_TO_EDGE,
-      magFilter: gl.LINEAR
+      wrapT: gl.CLAMP_TO_EDGE
     })
     return target
   }, [gl])
 
   const flowTargetB = useMemo(() => {
     const target = new RenderTarget(gl, {
-      width: flowSize,
-      height: flowSize,
-      // type: gl.FLOAT, // FLOAT_TYPE
-      // internalFormat: 0x8815, // RGB32F
-      // format: 0x1907, // RGB_FORMAT,
+      width: 154,
+      height: 154,
+      type: gl.FLOAT, // FLOAT_TYPE
+      internalFormat: 0x822e, // R32F
+      format: 0x1903, // RED_FORMAT,
       wrapS: gl.CLAMP_TO_EDGE,
-      wrapT: gl.CLAMP_TO_EDGE,
-      magFilter: gl.LINEAR
+      wrapT: gl.CLAMP_TO_EDGE
     })
     return target
   }, [gl])
@@ -57,9 +62,16 @@ export function useTargets(gl: OGLRenderingContext) {
       raymarchTarget,
       finalPassTarget,
       flowTargetA,
-      flowTargetB
+      flowTargetB,
+      particlesTarget
     }
-  }, [raymarchTarget, finalPassTarget, flowTargetB, flowTargetA])
+  }, [
+    raymarchTarget,
+    finalPassTarget,
+    flowTargetB,
+    flowTargetA,
+    particlesTarget
+  ])
 
   return targets
 }

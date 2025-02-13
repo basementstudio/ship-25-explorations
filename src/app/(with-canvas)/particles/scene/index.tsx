@@ -1,4 +1,12 @@
-import { Camera, Mesh, RenderTarget, Transform, Vec2, Vec3 } from "ogl"
+import {
+  Camera,
+  Geometry,
+  Mesh,
+  RenderTarget,
+  Transform,
+  Vec2,
+  Vec3
+} from "ogl"
 import { useEffect, useMemo, useRef } from "react"
 import { createPortal, useFrame, useOGL } from "react-ogl"
 
@@ -9,12 +17,12 @@ import { useGlControls } from "~/gl/hooks/use-gl-controls"
 
 import { getPostProgram } from "../programs/post-program"
 import { DebugTextures } from "./debug-textures"
+import { setObstacle, setupScene, simulate } from "./fluid"
 import { useAssets } from "./use-assets"
 import { useHit } from "./use-hit"
 import { usePrograms } from "./use-programs"
 import { useRenderCopy } from "./use-render-copy"
 import { useTargets } from "./use-targets"
-import { lerp } from "~/lib/utils/math"
 
 export function Scene() {
   const gl = useOGL((s) => s.gl)
@@ -33,19 +41,25 @@ export function Scene() {
 
   const camera = useMemo(() => {
     const camera = new Camera(gl).perspective({
-      near: 3,
-      far: 10,
+      near: 1,
+      far: 20,
       fov: 10
     })
-    camera.position.set(0, 3, 7)
+    camera.position.set(0, 2, 5)
     return camera
   }, [gl])
 
   const targets = useTargets(gl)
-  const { raymarchTarget, finalPassTarget, flowTargetA, flowTargetB } = targets
+  const {
+    raymarchTarget,
+    finalPassTarget,
+    flowTargetA,
+    flowTargetB,
+    particlesTarget
+  } = targets
 
   const programs = usePrograms(gl, targets, assets, camera)
-  const { raymarchProgram, flowProgram } = programs
+  const { raymarchProgram, flowProgram, particlesProgram } = programs
 
   const canvas = useOGL((s) => s.gl.canvas) as HTMLCanvasElement
 
@@ -64,6 +78,42 @@ export function Scene() {
   const flowScene = useMemo(() => {
     return new Transform()
   }, [])
+
+  const particlesScene = useMemo(() => {
+    return new Transform()
+  }, [])
+
+  // Add fluid simulation
+  const { fluidSimulation, pointsMesh, pointsGeo } = useMemo(
+    () => {
+      const fluidSimulation = setupScene({
+        isDarkMode: true
+      })
+
+      if (!fluidSimulation.fluid) {
+        throw new Error("Fluid simulation failed")
+      }
+
+      const positions = fluidSimulation.fluid!.particlePos
+
+      // console.log(positions)
+      // const positions = new Float32Array([-1, -1, 0, 3, -1, 0, -1, 3, 0])
+
+      const pointsGeo = new Geometry(gl, {
+        position: { size: 3, data: positions, usage: gl.DYNAMIC_DRAW }
+      })
+
+      const pointsMesh = new Mesh(gl, {
+        mode: gl.POINTS,
+        geometry: pointsGeo,
+        program: particlesProgram
+      })
+
+      return { fluidSimulation, pointsMesh, pointsGeo }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [gl, particlesProgram]
+  )
 
   const postProgram = useMemo(() => {
     const program = getPostProgram(gl)
@@ -119,14 +169,11 @@ export function Scene() {
     raymarchProgram
   ])
 
-  const vRefs = useMemo(
+  const hitData = useMemo(
     () => ({
       uv: new Vec2(),
       position: new Vec3(),
-      smoothPosition: new Vec3(),
-      prevPos: new Vec3(0, 0, 0),
-      tmpSpeedVec: new Vec3(0, 0, 0),
-      speed: 0
+      smoothPosition: new Vec3()
     }),
     []
   )
@@ -137,24 +184,65 @@ export function Scene() {
     camera,
     meshRef: raycastMeshRef,
     onIntersect: (hit) => {
-      vRefs.position.copy(hit.point)
-      vRefs.uv.copy(hit.uv) //scale
-      // console.log(hitData.uv)
+      hitData.position.copy(hit.point)
+      hitData.uv.copy(hit.uv) //scale
     }
   })
 
   const renderCopy = useRenderCopy(gl)
 
+  const time = useRef(0)
+
+  useFrame((_, t) => {
+    if (!time.current) {
+      time.current = t
+      return
+    }
+
+    // simulate fluid
+    const delta = (t - time.current) / 1000
+
+    time.current = t
+    setObstacle(-2, -2, false)
+    simulate(delta / 1, {
+      x: hitData.uv.x,
+      y: hitData.uv.y,
+      force: 0.3,
+      radius: 0.3
+    })
+
+    // if (fluidSimulation.fluid) {
+    //   console.log(fluidSimulation.fluid.particlePos)
+    // }
+
+    // render particles
+
+    renderer.gl.scissor(
+      DEFAULT_SCISSOR.x,
+      DEFAULT_SCISSOR.y,
+      DEFAULT_SCISSOR.width,
+      DEFAULT_SCISSOR.height
+    )
+    gl.viewport(
+      DEFAULT_SCISSOR.x,
+      DEFAULT_SCISSOR.y,
+      DEFAULT_SCISSOR.width,
+      DEFAULT_SCISSOR.height
+    )
+
+    gl.clearColor(0, 0, 0, 1)
+
+    pointsMesh.geometry.attributes.position.needsUpdate = true
+
+    renderer.render({
+      scene: particlesScene,
+      camera: camera,
+      target: particlesTarget
+    })
+  })
   useFrame((_, time) => {
-    vRefs.prevPos.copy(vRefs.smoothPosition)
-    vRefs.smoothPosition.lerp(vRefs.position, 0.1)
-    vRefs.tmpSpeedVec.copy(vRefs.smoothPosition)
-    vRefs.tmpSpeedVec.sub(vRefs.prevPos)
-
-    vRefs.speed += vRefs.tmpSpeedVec.len()
-
-    vRefs.speed = lerp(vRefs.speed, 0, 0.05)
-    console.log(vRefs.speed)
+    return
+    hitData.smoothPosition.lerp(hitData.position, 0.1)
 
     // debug render
     renderer.render({
@@ -163,8 +251,11 @@ export function Scene() {
       target: planeDebugTarget
     })
 
+    // console.log(flowTargets.targetWrite.texture.id)
+
     // render flow
-    flowProgram.uniforms.uMouse.value.copy(vRefs.uv)
+    flowProgram.uniforms.uMouse.value.copy(hitData.uv)
+    // console.log(flowProgram.uniforms.uMouse.value)
 
     renderer.render({
       camera,
@@ -173,6 +264,9 @@ export function Scene() {
     })
 
     renderCopy(flowTargetB.texture, flowTargetA)
+
+    // update mouse effect
+    raymarchProgram.uniforms.uHitPosition.value.copy(hitData.smoothPosition)
 
     // update focus
     const distanceToTarget = camera.position.distance(cameraTarget)
@@ -195,11 +289,7 @@ export function Scene() {
     // RENDER: raymarch
     gl.clearColor(0, 0, 0, 0)
 
-    // update mouse effect
-    raymarchProgram.uniforms.uHitPosition.value.copy(vRefs.smoothPosition)
-    // update uniforms
     raymarchProgram.uniforms.time.value = time * 0.0001
-    raymarchProgram.uniforms.mouseSpeed.value = vRefs.speed
 
     renderer.render({
       scene: raymarchScene,
@@ -228,11 +318,12 @@ export function Scene() {
   }, [gl])
 
   const debugTextures = {
-    raymarch: raymarchTarget.textures[0],
-    raymarchDepth: raymarchTarget.textures[1],
-    plane: planeDebugTarget.texture,
-    flow: flowTargetB.texture,
-    screen: finalPassTarget.texture
+    // raymarch: raymarchTarget.textures[0],
+    // raymarchDepth: raymarchTarget.textures[1],
+    // plane: planeDebugTarget.texture,
+    // flow: flowTargetB.texture,
+    // screen: finalPassTarget.texture,
+    particles: particlesTarget.texture
   }
 
   return (
@@ -276,6 +367,8 @@ export function Scene() {
         </>,
         planeScene
       )}
+
+      {createPortal(<primitive object={pointsMesh} />, particlesScene)}
     </>
   )
 }
