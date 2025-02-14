@@ -14,53 +14,38 @@ uniform float uMouseVelocity;
 out vec4 fragColor;
 
 void main() {
-  float dx = 1.0 / uResolution.x;
-  float dy = 1.0 / uResolution.y;
+  vec3 e = vec3(vec2(1.0) / uResolution.xy, 0.0);
+  vec2 q = gl_FragCoord.xy / uResolution.xy;
 
-  vec2 elevationAndVelocity = texture(uFlowFeedBackTexture, vUv).xy;
+  vec4 c = texture(uFlowFeedBackTexture, q);
 
-  // Mouse excitation based on distance in UV units
-  float distanceToMouse = distance(gl_FragCoord.xy, uMouse * uResolution);
+  float p11 = c.y;
 
-  if (distanceToMouse < 10.0 && uMouseVelocity > 0.001) {
-    fragColor = vec4(0.0, 0.4, 0.0, 1.0);
-    return;
-  }
+  float p10 = texture(uFlowFeedBackTexture, q - e.zy).x;
+  float p01 = texture(uFlowFeedBackTexture, q - e.xz).x;
+  float p21 = texture(uFlowFeedBackTexture, q + e.xz).x;
+  float p12 = texture(uFlowFeedBackTexture, q + e.zy).x;
 
-  // Old elevation
-  float previousElevation = elevationAndVelocity.x;
-  // Old velocity
-  float previousVelocity = elevationAndVelocity.y;
+  float d = 0.0;
 
-  // Finite differences
-  float elevationRight = texture(
-    uFlowFeedBackTexture,
-    vec2(vUv.x + dx, vUv.y)
-  ).x;
-  float elevationLeft = texture(
-    uFlowFeedBackTexture,
-    vec2(vUv.x - dx, vUv.y)
-  ).x;
-  float elevationUp = texture(uFlowFeedBackTexture, vec2(vUv.x, vUv.y + dy)).x;
-  float elevationDown = texture(
-    uFlowFeedBackTexture,
-    vec2(vUv.x, vUv.y - dy)
-  ).x;
+  float mouseMin = 10.5;
+  float mouseMax = 0.5;
 
-  float dampingFactor = 0.99;
+  d =
+    smoothstep(
+      mouseMin,
+      mouseMax,
+      length(uMouse.xy * uResolution.xy - gl_FragCoord.xy)
+    ) *
+    uMouseVelocity *
+    10.0;
 
-  // New elevation
-  float newElevation =
-    previousElevation +
-    previousVelocity +
-    0.2 *
-      (elevationLeft +
-        elevationRight +
-        elevationUp +
-        elevationDown -
-        4.0 * previousElevation);
-  newElevation = dampingFactor * newElevation;
+  // The actual propagation:
+  d += -(p11 - 0.5) * 2.0 + (p10 + p01 + p21 + p12 - 2.0);
+  d *= 0.99; // damping
+  d *= float(uFrame >= 2); // clear the buffer at iFrame < 2
+  d = d * 0.5 + 0.5;
 
-  // Store elevation and velocity
-  fragColor = vec4(newElevation, newElevation - previousElevation, 0.0, 1.0);
+  // Put previous state as "y":
+  fragColor = vec4(d, c.x, 0, 1);
 }

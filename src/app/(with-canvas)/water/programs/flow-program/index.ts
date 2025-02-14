@@ -12,5 +12,3 @@ export const getFlowProgram = (gl: OGLRenderingContext) => {
   program.uniforms.uTime = { value: 0.0 }
   return program
 }
-
-

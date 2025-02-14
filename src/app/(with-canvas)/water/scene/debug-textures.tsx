@@ -1,7 +1,7 @@
-import { Camera, Texture, Transform } from "ogl"
-import { useMemo, useState } from "react"
-import { createPortal, useFrame, useOGL } from "react-ogl"
 import { folder as levaFolder, useControls } from "leva"
+import { Camera, Texture, Transform } from "ogl"
+import { useMemo } from "react"
+import { createPortal, useFrame, useOGL } from "react-ogl"
 
 import { DEFAULT_SCISSOR } from "~/gl"
 import { QuadGeometry } from "~/gl/components/quad"

@@ -165,20 +165,51 @@ vec3 rotateVector(vec3 v, vec4 q) {
 
 #pragma glslify: unpackRGB = require('../../glsl-shared/unpack-rgb')
 
-float getFlowHit(vec3 p) {
+vec4 blurTexture(sampler2D sam, vec2 uv) {
+  vec2 e = vec2(1.0) / vec2(textureSize(sam, 0));
+  vec4 sum = vec4(0.0);
+  float weight = 0.0;
+
+  // Gaussian kernel weights
+  float kernel[9] = float[](
+    0.077847,
+    0.123317,
+    0.077847,
+    0.123317,
+    0.195346,
+    0.123317,
+    0.077847,
+    0.123317,
+    0.077847
+  );
+
+  // 3x3 kernel
+  for (int i = -1; i <= 1; i++) {
+    for (int j = -1; j <= 1; j++) {
+      vec2 offset = vec2(float(i), float(j)) * e;
+      float w = kernel[(i + 1) * 3 + (j + 1)];
+      sum += texture(sam, uv + offset) * w;
+      weight += w;
+    }
+  }
+
+  return sum / weight;
+}
+
+vec4 getFlowHit(vec3 p) {
   vec2 uv = p.xz;
   uv += 2.0;
   uv /= 4.0;
   uv = clamp(uv, 0.0, 1.0);
   uv.y = 1.0 - uv.y;
-  vec4 flow = texture(uFlowTexture, uv);
+  vec4 flow = blurTexture(uFlowTexture, uv);
 
   // smoot out to edges
   float edge = smoothstep(0.0, 0.1, uv.x);
   edge *= smoothstep(0.0, 0.1, uv.y);
   edge *= smoothstep(1.0, 0.9, uv.x);
   edge *= smoothstep(1.0, 0.9, uv.y);
-  return unpackRGB(flow.xyz) * edge;
+  return flow * edge;
 }
 
 float tetrahedron(vec3 p, float size) {
@@ -224,11 +255,6 @@ float getNoise2(vec3 p) {
   return n;
 }
 
-// float getNoise3(vec3 p) {
-//   float n = cnoise4d(vec4(p * 10.0, time * 10.0));
-//   return n;
-// }
-
 float getCircleSin(vec3 p) {
   float d = distance(p, uHitPosition * 0.5);
   float s = sin(d * 30.0);
@@ -236,52 +262,65 @@ float getCircleSin(vec3 p) {
 }
 
 float getSceneHit(vec3 p) {
+  vec4 flow = getFlowHit(p);
+
   float planeY = 0.0;
-  float flow = getFlowHit(p);
-  float clampFlow = clamp(flow, 0.0, 1.0);
 
-  float ferroFlow = smoothstep(0.7, 1.0, flow);
-
-  float spikes = getSpikes(p, flow);
-  spikes = ferroFlow * spikes * 0.5;
-  spikes *= 0.1;
-
-  float bubble = smoothstep(0.7, 1.0, flow) * 0.05;
-  planeY += spikes + bubble;
-
-  float circleSin = getCircleSin(p);
-
-  float noise = 0.0;
-  noise += getNoise2(p);
-  // remap flow from 0 to 1 to 0-1-0
-  noise *= cos(clampFlow * PI * 2.0 + PI) * 0.5 + 0.5;
-  noise *= circleSin;
-  noise *= mouseSpeed;
-  planeY += noise * 0.1;
+  planeY += flow.x * 0.1;
 
   vec3 pPlane = p - vec3(0.0, planeY, 0.0);
   float plane = sdPlane(pPlane);
 
-  // return plane;
-
-  float normalMixer = cos(time * 5.0) * 0.5 + 0.5;
-  normalMixer = gain(normalMixer, 3.0);
-
-  float orbeHit = getOrbeHit(p);
-
-  float hit;
-
-  // hit = orbeHit;
-
-  hit = mix3(
-    plane,
-    opSmoothUnion(plane, orbeHit, 0.5) + getNoise2(p) * 0.05,
-    orbeHit,
-    pyramidReveal
-  );
-
-  return hit;
-
+  return plane * 0.3;
 }
+
+// float getSceneHitOld(vec3 p) {
+//   float planeY = 0.0;
+//   float flow = getFlowHit(p);
+//   float clampFlow = clamp(flow, 0.0, 1.0);
+
+//   float ferroFlow = smoothstep(0.7, 1.0, flow);
+
+//   float spikes = getSpikes(p, flow);
+//   spikes = ferroFlow * spikes * 0.5;
+//   spikes *= 0.1;
+
+//   float bubble = smoothstep(0.7, 1.0, flow) * 0.05;
+//   planeY += spikes + bubble;
+
+//   float circleSin = getCircleSin(p);
+
+//   float noise = 0.0;
+//   noise += getNoise2(p);
+//   // remap flow from 0 to 1 to 0-1-0
+//   noise *= cos(clampFlow * PI * 2.0 + PI) * 0.5 + 0.5;
+//   noise *= circleSin;
+//   noise *= mouseSpeed;
+//   planeY += noise * 0.1;
+
+//   vec3 pPlane = p - vec3(0.0, planeY, 0.0);
+//   float plane = sdPlane(pPlane);
+
+//   // return plane;
+
+//   float normalMixer = cos(time * 5.0) * 0.5 + 0.5;
+//   normalMixer = gain(normalMixer, 3.0);
+
+//   float orbeHit = getOrbeHit(p);
+
+//   float hit;
+
+//   // hit = orbeHit;
+
+//   hit = mix3(
+//     plane,
+//     opSmoothUnion(plane, orbeHit, 0.5) + getNoise2(p) * 0.05,
+//     orbeHit,
+//     pyramidReveal
+//   );
+
+//   return hit;
+
+// }
 
 #pragma glslify: export(getSceneHit)

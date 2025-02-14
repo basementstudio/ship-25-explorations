@@ -17,7 +17,7 @@ RayResult castRay(
   float hitPoint = getSceneHit(ro);
   for (int i = 0; i < MAX_STEPS; i++) {
     vec3 p = ro + d0 * rd;
-    hitPoint = getSceneHit(p) * 0.4;
+    hitPoint = getSceneHit(p);
     d0 += hitPoint;
     if (hitPoint < surfaceDistance || d0 >= maxDistance) {
       break;
