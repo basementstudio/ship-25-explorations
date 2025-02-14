@@ -1,8 +1,10 @@
+import { animate, useMotionValue, useMotionValueEvent } from "motion/react"
 import { Camera, Mesh, RenderTarget, Transform, Vec2, Vec3 } from "ogl"
-import { useEffect, useMemo, useRef } from "react"
+import { useCallback, useEffect, useMemo, useRef } from "react"
 import { createPortal, useFrame, useOGL } from "react-ogl"
 
-import { DEFAULT_SCISSOR } from "~/gl"
+import { DEFAULT_SCISSOR, GLOBAL_GL } from "~/gl"
+import { CameraFrustumHelper } from "~/gl/components/devex/camera-frustum"
 import { OrbitHelper } from "~/gl/components/devex/orbit"
 import { QuadGeometry } from "~/gl/components/quad"
 import { useGlControls } from "~/gl/hooks/use-gl-controls"
@@ -14,6 +16,40 @@ import { useHit } from "./use-hit"
 import { usePrograms } from "./use-programs"
 import { useRenderCopy } from "./use-render-copy"
 import { useTargets } from "./use-targets"
+
+const DEBUG_CAMERA = new Camera(GLOBAL_GL).perspective({
+  near: 1,
+  far: 100,
+  fov: 45
+})
+
+DEBUG_CAMERA.position.set(10, 10, 10)
+
+const DEBUG_CAMERA_TARGET = new Vec3(0, 0, 0)
+
+interface CameraConfig {
+  near: number
+  far: number
+  fov: number
+  position: Vec3
+  target: Vec3
+}
+
+const CAMERA_FLOOR_CONFIG: CameraConfig = {
+  near: 3,
+  far: 10,
+  fov: 10,
+  position: new Vec3(0, 3, 7),
+  target: new Vec3(0, -0.8, 0)
+}
+
+const CAMERA_PYRAMID_CONFIG: CameraConfig = {
+  near: 4,
+  far: 20,
+  fov: 10,
+  position: new Vec3(0, 3, 7),
+  target: new Vec3(0, 3, 0)
+}
 
 export function Scene() {
   const gl = useOGL((s) => s.gl)
@@ -27,15 +63,14 @@ export function Scene() {
     setActiveCamera("custom")
   }, [setActiveCamera])
 
-  const cameraTarget = useMemo(() => new Vec3(0, 0, 0), [])
-
   const camera = useMemo(() => {
     const camera = new Camera(gl).perspective({
-      near: 3,
+      near: 6,
       far: 10,
       fov: 10
     })
     camera.position.set(0, 3, 7)
+    camera.lookAt(new Vec3(0, 0, 0))
     return camera
   }, [gl])
 
@@ -51,7 +86,7 @@ export function Scene() {
     return new Transform()
   }, [])
 
-  const planeScene = useMemo(() => {
+  const debugRaycastScene = useMemo(() => {
     return new Transform()
   }, [])
 
@@ -120,6 +155,63 @@ export function Scene() {
 
   const frameCountRef = useRef(0)
 
+  const pyramidReveal = useMotionValue(0)
+
+  const cameraVectorsRefs = useMemo(
+    () => ({
+      position: new Vec3(),
+      target: new Vec3()
+    }),
+    []
+  )
+
+  // lerp betweeen floor and pyramid camera
+  const updatePyramidReveal = useCallback(
+    (l: number) => {
+      cameraVectorsRefs.position
+        .copy(CAMERA_FLOOR_CONFIG.position)
+        .lerp(CAMERA_PYRAMID_CONFIG.position, l)
+
+      camera.position.copy(cameraVectorsRefs.position)
+
+      cameraVectorsRefs.target
+        .copy(CAMERA_FLOOR_CONFIG.target)
+        .lerp(CAMERA_PYRAMID_CONFIG.target, l)
+      camera.lookAt(cameraVectorsRefs.target)
+
+      camera.perspective({
+        near: lerp(CAMERA_FLOOR_CONFIG.near, CAMERA_PYRAMID_CONFIG.near, l),
+        far: lerp(CAMERA_FLOOR_CONFIG.far, CAMERA_PYRAMID_CONFIG.far, l),
+        fov: lerp(CAMERA_FLOOR_CONFIG.fov, CAMERA_PYRAMID_CONFIG.fov, l)
+      })
+
+      camera.updateProjectionMatrix()
+
+      raymarchProgram.uniforms.fov.value = camera.fov
+      raymarchProgram.uniforms.uNear.value = camera.near
+      raymarchProgram.uniforms.uFar.value = camera.far
+      raymarchProgram.uniforms.cameraQuaternion.value = camera.quaternion
+      raymarchProgram.uniforms.pyramidReveal.value = l
+    },
+    [camera, cameraVectorsRefs, raymarchProgram]
+  )
+
+  useMotionValueEvent(pyramidReveal, "change", (value) => {
+    updatePyramidReveal(value)
+  })
+
+  useEffect(() => {
+    // pyramidReveal.set(1)
+    animate(pyramidReveal, 1, {
+      delay: 2,
+      duration: 7,
+      ease: "easeInOut",
+      onUpdate: (value) => {
+        updatePyramidReveal(value)
+      }
+    })
+  }, [pyramidReveal, updatePyramidReveal])
+
   useFrame((_, time) => {
     vRefs.prevPos.copy(vRefs.smoothPosition)
     vRefs.smoothPosition.lerp(vRefs.position, 0.1)
@@ -134,8 +226,8 @@ export function Scene() {
 
     // debug render
     renderer.render({
-      camera,
-      scene: planeScene,
+      camera: DEBUG_CAMERA,
+      scene: debugRaycastScene,
       target: planeDebugTarget
     })
 
@@ -225,7 +317,13 @@ export function Scene() {
         flowScene
       )}
 
-      <OrbitHelper isActive={true} camera={camera} target={cameraTarget} />
+      {/* <primitive object={camera} /> */}
+
+      <OrbitHelper
+        isActive={true}
+        camera={DEBUG_CAMERA}
+        target={DEBUG_CAMERA_TARGET}
+      />
 
       {createPortal(
         <>
@@ -238,8 +336,9 @@ export function Scene() {
             <plane />
             <normalProgram />
           </mesh>
+          <CameraFrustumHelper camera={camera} />
         </>,
-        planeScene
+        debugRaycastScene
       )}
     </>
   )

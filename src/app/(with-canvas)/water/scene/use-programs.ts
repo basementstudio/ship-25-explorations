@@ -43,13 +43,15 @@ export function usePrograms(
     program.uniforms.resolution = {
       value: new Vec2(gl.canvas.width, gl.canvas.height)
     }
-    program.uniforms.pyramidReveal = { value: 1.0 }
+    program.uniforms.pyramidReveal = { value: 0.0 }
     program.uniforms.mouseSpeed = { value: 0.0 }
+
+    program.uniforms.uNoiseTexture = { value: assets.noiseMap }
 
     // lights
     program.uniforms.uEnvMap = { value: assets.envMap }
     return program
-  }, [gl, camera, assets.envMap, targets.flowTargetB])
+  }, [gl, camera, assets.envMap, targets.flowTargetB, assets.noiseMap])
 
   const programs = useMemo(() => {
     return {
@@ -59,14 +61,6 @@ export function usePrograms(
   }, [raymarchProgram, flowProgram])
 
   useControls({
-    pyramidReveal: {
-      value: 0,
-      min: 0.0,
-      max: 1.0,
-      onChange: (value) => {
-        raymarchProgram.uniforms.pyramidReveal.value = value
-      }
-    },
     Interaction: levaFolder({
       noiseScale: {
         value: 10,

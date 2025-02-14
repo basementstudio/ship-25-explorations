@@ -1,6 +1,7 @@
-#pragma glslify: cnoise4d = require('glsl-noise/classic/4d')
-
 const float PI = 3.14159265359;
+
+#pragma glslify: snoise2 = require(glsl-noise/simplex/2d)
+#pragma glslify: snoise3 = require(glsl-noise/simplex/3d)
 
 uniform vec3 uHitPosition;
 uniform float noiseScale;
@@ -9,8 +10,8 @@ uniform sampler2D uFlowTexture;
 uniform float pyramidReveal;
 uniform sampler2D uNoiseTexture;
 uniform float mouseSpeed;
-
 uniform mat4 uPyramidMatrix;
+// AVAILABLE: uniform float time;
 
 float sdSphere(vec3 position, float radius) {
   return length(position) - radius;
@@ -20,9 +21,18 @@ float sdPlane(vec3 position) {
   return position.y;
 }
 
+float tetrahedron(vec3 p, float size) {
+  p = (uPyramidMatrix * vec4(p, 1.0)).xyz;
+  p /= size;
+  float d = (max(abs(p.x + p.y) - p.z, abs(p.x - p.y) + p.z) - 1.0) / sqrt(3.0);
+  return d * size;
+}
+
 float plane(vec3 p, vec3 c, vec3 n) {
   return dot(p - c, n);
 }
+
+// sdf functions
 
 float opUnion(float d1, float d2) {
   return min(d1, d2);
@@ -37,90 +47,7 @@ float opSmoothUnion(float d1, float d2, float k) {
   return mix(d2, d1, h) - k * h * (1.0 - h);
 }
 
-float getNoise(vec3 p) {
-  float n = sin(p.x * 20.0) * 0.5 + 0.5 + (sin(p.z * 20.0) * 0.5 + 0.5);
-  n *= 0.5;
-  return n;
-}
-
-// https://www.shadertoy.com/view/Ntd3DX
-float pyramid(
-  vec3 position,
-  float halfWidth,
-  float halfDepth,
-  float halfHeight
-) {
-  position.y += halfHeight;
-  position.xz = abs(position.xz);
-  vec3 d1 = vec3(
-    max(position.x - halfWidth, 0.0),
-    position.y,
-    max(position.z - halfDepth, 0.0)
-  );
-  vec3 n1 = vec3(0.0, halfDepth, 2.0 * halfHeight);
-  float k1 = dot(n1, n1);
-  float h1 = dot(position - vec3(halfWidth, 0.0, halfDepth), n1) / k1;
-  vec3 n2 = vec3(k1, 2.0 * halfHeight * halfWidth, -halfDepth * halfWidth);
-  float m1 = dot(position - vec3(halfWidth, 0.0, halfDepth), n2) / dot(n2, n2);
-  vec3 d2 =
-    position -
-    clamp(
-      position - n1 * h1 - n2 * max(m1, 0.0),
-      vec3(0.0),
-      vec3(halfWidth, 2.0 * halfHeight, halfDepth)
-    );
-  vec3 n3 = vec3(2.0 * halfHeight, halfWidth, 0.0);
-  float k2 = dot(n3, n3);
-  float h2 = dot(position - vec3(halfWidth, 0.0, halfDepth), n3) / k2;
-  vec3 n4 = vec3(-halfWidth * halfDepth, 2.0 * halfHeight * halfDepth, k2);
-  float m2 = dot(position - vec3(halfWidth, 0.0, halfDepth), n4) / dot(n4, n4);
-  vec3 d3 =
-    position -
-    clamp(
-      position - n3 * h2 - n4 * max(m2, 0.0),
-      vec3(0.0),
-      vec3(halfWidth, 2.0 * halfHeight, halfDepth)
-    );
-  float d = sqrt(min(min(dot(d1, d1), dot(d2, d2)), dot(d3, d3)));
-  return max(max(h1, h2), -position.y) < 0.0
-    ? -d
-    : d;
-}
-
-// square base
-float pyramid(vec3 position, float halfWidth, float halfHeight) {
-  position.y += halfHeight;
-  position.xz = abs(position.xz);
-  if (position.x > position.z) {
-    position.xz = position.zx;
-  }
-  vec3 d1 = vec3(
-    max(position.x - halfWidth, 0.0),
-    position.y,
-    max(position.z - halfWidth, 0.0)
-  );
-  vec3 q = position;
-  float k = halfWidth * halfWidth + 4.0 * halfHeight * halfHeight;
-  float h =
-    dot(q.yz - vec2(0.0, halfWidth), vec2(halfWidth, 2.0 * halfHeight)) / k;
-  q.yz -= vec2(halfWidth, 2.0 * halfHeight) * h;
-  q -=
-    vec3(k, 2.0 * halfHeight * halfWidth, -halfWidth * halfWidth) *
-    max(q.x - q.z, 0.0) /
-    (k + halfWidth * halfWidth);
-  vec3 d2 =
-    position -
-    clamp(q, vec3(0.0), vec3(halfWidth, 2.0 * halfHeight, halfWidth));
-  float d = sqrt(min(dot(d1, d1), dot(d2, d2)));
-  return max(h, -position.y) < 0.0
-    ? -d
-    : d;
-}
-
-float sdTriPrism(vec3 p, vec2 h) {
-  vec3 q = abs(p);
-  return max(q.z - h.y, max(q.x * 0.866025 + p.y * 0.5, -p.y) - h.x * 0.5);
-}
+// remap functions
 
 float gain(float x, float k) {
   float a = 0.5 * pow(2.0 * (x < 0.5 ? x : 1.0 - x), k);
@@ -140,30 +67,11 @@ float mix3(float a, float b, float c, float t) {
   }
 }
 
-vec4 qmul(vec4 q1, vec4 q2) {
-  return vec4(
-    q1.w * q2.xyz + q2.w * q1.xyz + cross(q1.xyz, q2.xyz),
-    q1.w * q2.w - dot(q1.xyz, q2.xyz)
-  );
+float almostUnitIdentity(float x) {
+  return x * x * (2.0 - x);
 }
 
-vec4 quat_from_axis_angle(vec3 axis, float angle) {
-  vec4 qr;
-  float half_angle = angle * 0.5 * 3.14159 / 180.0;
-  qr.x = axis.x * sin(half_angle);
-  qr.y = axis.y * sin(half_angle);
-  qr.z = axis.z * sin(half_angle);
-  qr.w = cos(half_angle);
-  return qr;
-}
-
-vec3 rotateVector(vec3 v, vec4 q) {
-  vec4 qv = qmul(q, vec4(v, 0.0));
-  vec4 qinv = vec4(-q.xyz, q.w);
-  return qmul(qv, qinv).xyz;
-}
-
-#pragma glslify: unpackRGB = require('../../glsl-shared/unpack-rgb')
+// blur
 
 vec4 blurTexture(sampler2D sam, vec2 uv) {
   vec2 e = vec2(1.0) / vec2(textureSize(sam, 0));
@@ -196,8 +104,53 @@ vec4 blurTexture(sampler2D sam, vec2 uv) {
   return sum / weight;
 }
 
-float almostUnitIdentity(float x) {
-  return x * x * (2.0 - x);
+// noise functions
+vec3 getNoise(vec2 uv) {
+  vec3 noise = texture(uNoiseTexture, uv).xyz;
+  return noise;
+}
+
+float getCircleSin(vec3 p) {
+  float d = distance(p, uHitPosition * 0.5);
+  float s = sin(d * 30.0);
+  return s * 0.5 + 0.5;
+}
+
+// objects
+float getOrbeHit(vec3 p) {
+  vec3 orbeP = p;
+  float pyramidMinP = -0.8;
+  float pyramidMaxP = 3.0;
+  float orbeYPos = mix(pyramidMinP, pyramidMaxP, pyramidReveal);
+
+  float noise = snoise3(
+    (orbeP.xyz + vec3(0.0, time * 0.1 - orbeYPos * 0.9, time * 0.2)) * 5.0
+  );
+  orbeP.z += noise * 0.1;
+
+  orbeP -= vec3(0.0, orbeYPos, 0.0);
+  float scale = 0.2;
+  return tetrahedron(orbeP, 0.2);
+}
+
+float getSpikesHit(vec3 pos, float flow) {
+  vec3 p = pos;
+
+  float shiftInlfuence = p.y * 10.0;
+
+  p -= uHitPosition;
+  float dist = length(p) * 2.0;
+  vec3 direction = normalize(p);
+
+  float dist2 = dist - 0.01;
+  dist2 = max(dist2, 0.0);
+  p.xz -= direction.xz * shiftInlfuence * dist2 * 0.1;
+
+  p += uHitPosition;
+
+  p += uHitPosition * 0.2;
+  float sinCos = sin(p.x * 60.0) * cos(p.z * 60.0);
+  return sinCos;
 }
 
 vec4 getFlowHit(vec3 p) {
@@ -221,66 +174,27 @@ vec4 getFlowHit(vec3 p) {
   return flow * edge;
 }
 
-float tetrahedron(vec3 p, float size) {
-  p = (uPyramidMatrix * vec4(p, 1.0)).xyz;
-  p /= size;
-  float d = (max(abs(p.x + p.y) - p.z, abs(p.x - p.y) + p.z) - 1.0) / sqrt(3.0);
-  return d * size;
-}
-
-float getOrbeHit(vec3 p) {
-  vec3 orbeP = p;
-  float pyramidMinP = -0.8;
-  float pyramidMaxP = 0.0;
-  float reveal = mix(pyramidMinP, pyramidMaxP, pyramidReveal);
-  orbeP -= vec3(0.0, reveal, 0.0);
-  float scale = 0.2;
-
-  return tetrahedron(orbeP, 0.2);
-}
-
-float getSpikes(vec3 pos, float flow) {
-  vec3 p = pos;
-
-  float shiftInlfuence = p.y * 10.0;
-
-  p -= uHitPosition;
-  float dist = length(p) * 2.0;
-  vec3 direction = normalize(p);
-
-  float dist2 = dist - 0.01;
-  dist2 = max(dist2, 0.0);
-  p.xz -= direction.xz * shiftInlfuence * dist2 * 0.1;
-
-  p += uHitPosition;
-
-  p += uHitPosition * 0.2;
-  float sinCos = sin(p.x * 60.0) * cos(p.z * 60.0);
-  return sinCos;
-}
-
-float getNoise2(vec3 p) {
-  float n = cnoise4d(vec4(p * 5.0, time * 2.0));
-  return n;
-}
-
-float getCircleSin(vec3 p) {
-  float d = distance(p, uHitPosition * 0.5);
-  float s = sin(d * 30.0);
-  return s * 0.5 + 0.5;
+float getFloorHit(vec3 p) {
+  // plane with flow
+  vec4 flow = getFlowHit(p);
+  float planeY = 0.0;
+  planeY += flow.x * 0.1 - 0.01;
+  vec3 pPlane = p - vec3(0.0, planeY, 0.0);
+  float plane = sdPlane(pPlane);
+  return plane;
 }
 
 float getSceneHit(vec3 p) {
-  vec4 flow = getFlowHit(p);
+  float orbeHit = getOrbeHit(p);
 
-  float planeY = 0.0;
+  float sdf = orbeHit;
 
-  planeY += flow.x * 0.1 - 0.01;
+  if (pyramidReveal < 0.95) {
+    float floorHit = getFloorHit(p);
+    sdf = min(sdf, floorHit);
+  }
 
-  vec3 pPlane = p - vec3(0.0, planeY, 0.0);
-  float plane = sdPlane(pPlane);
-
-  return plane * 0.3;
+  return sdf * 0.3;
 }
 
 // float getSceneHitOld(vec3 p) {
@@ -290,7 +204,7 @@ float getSceneHit(vec3 p) {
 
 //   float ferroFlow = smoothstep(0.7, 1.0, flow);
 
-//   float spikes = getSpikes(p, flow);
+//   float spikes = getSpikesHit(p, flow);
 //   spikes = ferroFlow * spikes * 0.5;
 //   spikes *= 0.1;
 

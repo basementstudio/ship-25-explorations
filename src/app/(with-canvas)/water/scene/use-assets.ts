@@ -1,7 +1,5 @@
 import { Mesh } from "ogl"
-
 import { OGLRenderingContext, TextureLoader } from "ogl"
-
 import { GLTFLoader } from "ogl"
 import { useMemo } from "react"
 import { useLoader } from "react-ogl"

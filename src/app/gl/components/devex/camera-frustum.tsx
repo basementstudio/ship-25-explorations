@@ -204,11 +204,120 @@ const getFrustumBoxGeometry = (camera: Camera) => {
   return geo
 }
 
+/* Perspective Frustum Geometry */
+const getPerspectiveFrustumBoxGeometry = (camera: Camera) => {
+  const { near, far, fov, aspect } = camera
+
+  // Compute near plane bounds
+  const nearTop = near * Math.tan((fov * Math.PI) / 360)
+  const nearBottom = -nearTop
+  const nearRight = nearTop * aspect
+  const nearLeft = -nearRight
+
+  // Compute far plane bounds
+  const farTop = far * Math.tan((fov * Math.PI) / 360)
+  const farBottom = -farTop
+  const farRight = farTop * aspect
+  const farLeft = -farRight
+
+  const geo = new Geometry(GLOBAL_GL, {
+    position: {
+      size: 3,
+      /* Build a perspective frustum box geometry */
+      data: new Float32Array([
+        // Near plane
+        nearLeft,
+        nearBottom,
+        -near,
+        nearRight,
+        nearBottom,
+        -near,
+        nearRight,
+        nearBottom,
+        -near,
+        nearRight,
+        nearTop,
+        -near,
+        nearRight,
+        nearTop,
+        -near,
+        nearLeft,
+        nearTop,
+        -near,
+        nearLeft,
+        nearTop,
+        -near,
+        nearLeft,
+        nearBottom,
+        -near,
+
+        // Far plane
+        farLeft,
+        farBottom,
+        -far,
+        farRight,
+        farBottom,
+        -far,
+        farRight,
+        farBottom,
+        -far,
+        farRight,
+        farTop,
+        -far,
+        farRight,
+        farTop,
+        -far,
+        farLeft,
+        farTop,
+        -far,
+        farLeft,
+        farTop,
+        -far,
+        farLeft,
+        farBottom,
+        -far,
+
+        // Connect near and far planes
+        nearLeft,
+        nearBottom,
+        -near,
+        farLeft,
+        farBottom,
+        -far,
+        nearRight,
+        nearBottom,
+        -near,
+        farRight,
+        farBottom,
+        -far,
+        nearRight,
+        nearTop,
+        -near,
+        farRight,
+        farTop,
+        -far,
+        nearLeft,
+        nearTop,
+        -near,
+        farLeft,
+        farTop,
+        -far
+      ])
+    },
+    normal: {
+      size: 3,
+      data: new Float32Array([])
+    }
+  })
+
+  return geo
+}
+
 export interface CameraHelperProps {
   camera: Camera
 }
 
-export const CameraHelper = ({ camera }: CameraHelperProps) => {
+export const CameraFrustumHelper = ({ camera }: CameraHelperProps) => {
   const rootRef = useRef<Transform>()
   const geoRef = useRef<Mesh | null>(null)
 
@@ -220,7 +329,8 @@ export const CameraHelper = ({ camera }: CameraHelperProps) => {
     top: 0,
     bottom: 0,
     left: 0,
-    right: 0
+    right: 0,
+    fov: 0
   })
 
   useFrame(() => {
@@ -236,7 +346,8 @@ export const CameraHelper = ({ camera }: CameraHelperProps) => {
       camera.top !== refs.current.top ||
       camera.bottom !== refs.current.bottom ||
       camera.left !== refs.current.left ||
-      camera.right !== refs.current.right
+      camera.right !== refs.current.right ||
+      camera.fov !== refs.current.fov
     ) {
       refs.current.position.copy(camera.position)
       refs.current.rotation.copy(camera.rotation)
@@ -246,6 +357,7 @@ export const CameraHelper = ({ camera }: CameraHelperProps) => {
       refs.current.bottom = camera.bottom
       refs.current.left = camera.left
       refs.current.right = camera.right
+      refs.current.fov = camera.fov
     } else {
       return
     }
@@ -254,7 +366,11 @@ export const CameraHelper = ({ camera }: CameraHelperProps) => {
     rootRef.current?.rotation.copy(camera.rotation)
     rootRef.current?.updateMatrixWorld()
     if (geoRef.current) {
-      geoRef.current.geometry = getFrustumBoxGeometry(camera)
+      if (camera.fov > 0) {
+        geoRef.current.geometry = getPerspectiveFrustumBoxGeometry(camera)
+      } else {
+        geoRef.current.geometry = getFrustumBoxGeometry(camera)
+      }
       geoRef.current.updateMatrixWorld()
       geoRef.current.updateMatrix()
     }
