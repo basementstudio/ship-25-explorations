@@ -196,6 +196,10 @@ vec4 blurTexture(sampler2D sam, vec2 uv) {
   return sum / weight;
 }
 
+float almostUnitIdentity(float x) {
+  return x * x * (2.0 - x);
+}
+
 vec4 getFlowHit(vec3 p) {
   vec2 uv = p.xz;
   uv += 2.0;
@@ -209,6 +213,12 @@ vec4 getFlowHit(vec3 p) {
   edge *= smoothstep(0.0, 0.1, uv.y);
   edge *= smoothstep(1.0, 0.9, uv.x);
   edge *= smoothstep(1.0, 0.9, uv.y);
+
+  flow.x -= 0.5;
+  // flow.x *= 2.0;
+  // flow.x = smoothstep(0.0, 2.0, flow.x);
+
+  // flow.x = almostUnitIdentity(flow.x);
   return flow * edge;
 }
 

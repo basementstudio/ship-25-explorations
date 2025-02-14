@@ -29,7 +29,7 @@ void main() {
   float d = 0.0;
 
   float mouseMin = 10.5;
-  float mouseMax = 0.5;
+  float mouseMax = 0.0;
 
   d =
     smoothstep(
