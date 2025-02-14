@@ -215,10 +215,9 @@ vec4 getFlowHit(vec3 p) {
   edge *= smoothstep(1.0, 0.9, uv.y);
 
   flow.x -= 0.5;
-  // flow.x *= 2.0;
-  // flow.x = smoothstep(0.0, 2.0, flow.x);
-
-  // flow.x = almostUnitIdentity(flow.x);
+  flow.x *= 2.0;
+  flow.x = almostUnitIdentity(flow.x);
+  flow.x *= 0.5;
   return flow * edge;
 }
 
@@ -276,7 +275,7 @@ float getSceneHit(vec3 p) {
 
   float planeY = 0.0;
 
-  planeY += flow.x * 0.1;
+  planeY += flow.x * 0.1 - 0.01;
 
   vec3 pPlane = p - vec3(0.0, planeY, 0.0);
   float plane = sdPlane(pPlane);
