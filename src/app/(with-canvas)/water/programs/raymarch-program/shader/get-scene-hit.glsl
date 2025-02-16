@@ -56,6 +56,10 @@ float gain(float x, float k) {
     : 1.0 - a;
 }
 
+float expStep(float x, float n) {
+  return exp2(-exp2(n) * pow(x, n));
+}
+
 // a when t = 0
 // b when t = 0.5
 // c when t = 1
@@ -123,10 +127,24 @@ float getOrbeHit(vec3 p) {
   float pyramidMaxP = 3.0;
   float orbeYPos = mix(pyramidMinP, pyramidMaxP, pyramidReveal);
 
-  float noise = snoise3(
-    (orbeP.xyz + vec3(0.0, time * 0.1 - orbeYPos * 0.9, time * 0.2)) * 5.0
-  );
-  orbeP.z += noise * 0.1;
+  float noiseAmmount = 1.0 - pyramidReveal;
+
+  if (noiseAmmount > 0.0) {
+    float noise = snoise3(
+      (orbeP.xyz + vec3(0.0, time * 0.1 - orbeYPos * 0.9, time * 0.2)) * 5.0
+    );
+
+    float noiseMult = 1.0 - expStep(noiseAmmount, 2.0);
+
+    // hard noise
+    float noise1 = noise;
+    // noise1 = pow(noise1, 0.5);
+    noise1 *= noiseMult;
+
+    // orbeP.x += noise1 * 0.01;
+    orbeP.z += noise1 * 0.06;
+    orbeP.y += noise * 0.1 * noiseMult;
+  }
 
   orbeP -= vec3(0.0, orbeYPos, 0.0);
   float scale = 0.2;
@@ -190,8 +208,9 @@ float getSceneHit(vec3 p) {
   float sdf = orbeHit;
 
   if (pyramidReveal < 0.95) {
+    float smoothFactor = smoothstep(0.0, 0.1, pyramidReveal);
     float floorHit = getFloorHit(p);
-    sdf = min(sdf, floorHit);
+    sdf = opSmoothUnion(sdf, floorHit, 0.3 * smoothFactor);
   }
 
   return sdf * 0.3;

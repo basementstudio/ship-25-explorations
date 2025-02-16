@@ -232,22 +232,25 @@ export function Scene() {
     })
 
     // render flow
-    flowProgram.uniforms.uMouseVelocity.value = vRefs.smoothUv
-      .clone()
-      .sub(vRefs.prevSmoothUv)
-      .len()
-    flowProgram.uniforms.uMouse.value.copy(vRefs.smoothUv)
+    const shouldRenderFlow = pyramidReveal.get() < 0.7
+    if (shouldRenderFlow) {
+      flowProgram.uniforms.uMouseVelocity.value = vRefs.smoothUv
+        .clone()
+        .sub(vRefs.prevSmoothUv)
+        .len()
+      flowProgram.uniforms.uMouse.value.copy(vRefs.smoothUv)
 
-    renderer.render({
-      camera,
-      scene: flowScene,
-      target: flowTargetB
-    })
+      renderer.render({
+        camera,
+        scene: flowScene,
+        target: flowTargetB
+      })
 
-    frameCountRef.current++
-    flowProgram.uniforms.uFrame.value = frameCountRef.current
+      frameCountRef.current++
+      flowProgram.uniforms.uFrame.value = frameCountRef.current
 
-    renderCopy(flowTargetB.texture, flowTargetA)
+      renderCopy(flowTargetB.texture, flowTargetA)
+    }
 
     renderer.gl.scissor(
       DEFAULT_SCISSOR.x,
