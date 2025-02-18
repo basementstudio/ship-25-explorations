@@ -3,6 +3,8 @@ const float PI = 3.14159265359;
 #pragma glslify: snoise2 = require(glsl-noise/simplex/2d)
 #pragma glslify: snoise3 = require(glsl-noise/simplex/3d)
 
+#pragma glslify: valueRemap = require('../../glsl-shared/value-remap')
+
 uniform vec3 uHitPosition;
 uniform float noiseScale;
 uniform float noiseLength;
@@ -124,7 +126,7 @@ float getCircleSin(vec3 p) {
 float getOrbeHit(vec3 p) {
   vec3 orbeP = p;
   float pyramidMinP = -0.8;
-  float pyramidMaxP = 3.0;
+  float pyramidMaxP = 0.5;
   float orbeYPos = mix(pyramidMinP, pyramidMaxP, pyramidReveal);
 
   float noiseAmmount = 1.0 - pyramidReveal;
@@ -171,10 +173,16 @@ float getSpikesHit(vec3 pos, float flow) {
   return sinCos;
 }
 
+float flowScale = 2.5;
+
 vec4 getFlowHit(vec3 p) {
   vec2 uv = p.xz;
-  uv += 2.0;
-  uv /= 4.0;
+  uv = vec2(
+    valueRemap(uv.x, -flowScale, flowScale, 0.0, 1.0),
+    valueRemap(uv.y, -flowScale, flowScale, 0.0, 1.0)
+  );
+  // uv += 1.0 * flowScale;
+  // uv /= 2.0 * flowScale;
   uv = clamp(uv, 0.0, 1.0);
   uv.y = 1.0 - uv.y;
   vec4 flow = blurTexture(uFlowTexture, uv);
@@ -203,12 +211,21 @@ float getFloorHit(vec3 p) {
 }
 
 float getSceneHit(vec3 p) {
+  float noise =
+    snoise3((p.xyz * 1.5 + vec3(0.0, time * 2.1, time * 0.2)) * 5.0) * 0.5 +
+    0.5;
+
   float orbeHit = getOrbeHit(p);
 
   float sdf = orbeHit;
 
-  if (pyramidReveal < 0.95) {
-    float smoothFactor = smoothstep(0.0, 0.1, pyramidReveal);
+  float smoothFactor = smoothstep(0.0, 0.1, pyramidReveal);
+  float inverseFactor = 1.0 - smoothstep(0.8, 1.0, pyramidReveal);
+
+  smoothFactor *= inverseFactor;
+  smoothFactor *= noise;
+
+  if (pyramidReveal < 1.95) {
     float floorHit = getFloorHit(p);
     sdf = opSmoothUnion(sdf, floorHit, 0.3 * smoothFactor);
   }

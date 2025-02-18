@@ -1,8 +1,9 @@
-import { Camera, Mesh, Raycast, RaycastHit, Vec2 } from "ogl";
-import { useEffect, useMemo, useRef } from "react";
-import { useOGL } from "react-ogl";
-import { useMouseMove } from "~/hooks/use-mouse-move";
-import { valueRemap } from "~/lib/utils/math";
+import { Camera, Mesh, Raycast, RaycastHit, Vec2 } from "ogl"
+import { useMemo } from "react"
+import { useOGL } from "react-ogl"
+
+import { useMouseMove } from "~/hooks/use-mouse-move"
+import { valueRemap } from "~/lib/utils/math"
 
 interface UseHitParams {
   camera: Camera
@@ -14,7 +15,6 @@ export const hitConfig = {
   scale: 1
 }
 
-
 const raycaster = new Raycast()
 
 export function useHit({ camera, meshRef, onIntersect }: UseHitParams) {
@@ -22,8 +22,7 @@ export function useHit({ camera, meshRef, onIntersect }: UseHitParams) {
 
   const mouse = useMemo(() => new Vec2(), [])
 
-
-  useMouseMove(e => {
+  useMouseMove((e) => {
     mouse.set(
       2.0 * (e.x / renderer.width) - 1.0,
       2.0 * (1.0 - e.y / renderer.height) - 1.0
@@ -56,6 +55,5 @@ export function useHit({ camera, meshRef, onIntersect }: UseHitParams) {
     const hitMesh = hits[0] as Mesh
     const hitData = hitMesh.hit as RaycastHit
     onIntersect(hitData)
-
   })
 }

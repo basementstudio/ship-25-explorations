@@ -48,7 +48,7 @@ const CAMERA_PYRAMID_CONFIG: CameraConfig = {
   far: 20,
   fov: 10,
   position: new Vec3(0, 3, 7),
-  target: new Vec3(0, 3, 0)
+  target: new Vec3(0, 0.5, 0)
 }
 
 export function Scene() {
@@ -101,6 +101,10 @@ export function Scene() {
       const width = canvas.width * pixelRatio
       const height = canvas.height * pixelRatio
 
+      const aspect = width / height
+      camera.aspect = aspect
+      camera.updateProjectionMatrix()
+
       raymarchProgram.uniforms.fov.value = camera.fov
 
       // render targets
@@ -120,7 +124,7 @@ export function Scene() {
     raymarchTarget,
     finalPassTarget,
     renderer.dpr,
-    camera.fov,
+    camera,
     raymarchProgram,
     flowProgram
   ])
@@ -228,11 +232,16 @@ export function Scene() {
     renderer.render({
       camera: DEBUG_CAMERA,
       scene: debugRaycastScene,
-      target: planeDebugTarget
+      target: orbitDebugTarget
+    })
+    renderer.render({
+      camera,
+      scene: debugRaycastScene,
+      target: mainDebugTarget
     })
 
     // render flow
-    const shouldRenderFlow = pyramidReveal.get() < 0.7
+    const shouldRenderFlow = pyramidReveal.get() < 0.7 || true
     if (shouldRenderFlow) {
       flowProgram.uniforms.uMouseVelocity.value = vRefs.smoothUv
         .clone()
@@ -286,7 +295,15 @@ export function Scene() {
     gl.clearColor(clearColor, clearColor, clearColor, 1)
   })
 
-  const planeDebugTarget = useMemo(() => {
+  const orbitDebugTarget = useMemo(() => {
+    const target = new RenderTarget(gl, {
+      width: 1024 / 2,
+      height: 1024 / 2
+    })
+    return target
+  }, [gl])
+
+  const mainDebugTarget = useMemo(() => {
     const target = new RenderTarget(gl, {
       width: 1024 / 2,
       height: 1024 / 2
@@ -296,10 +313,10 @@ export function Scene() {
 
   const debugTextures = {
     raymarch: raymarchTarget.textures[0],
-    raymarchDepth: raymarchTarget.textures[1],
-    plane: planeDebugTarget.texture,
-    flow: flowTargetB.texture,
-    screen: finalPassTarget.texture
+    // raymarchDepth: raymarchTarget.textures[1],
+    orbit: orbitDebugTarget.texture,
+    mainDebug: mainDebugTarget.texture,
+    flow: flowTargetB.texture
   }
 
   return (

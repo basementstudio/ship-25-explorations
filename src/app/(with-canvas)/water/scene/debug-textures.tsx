@@ -11,9 +11,13 @@ import { hitConfig } from "./use-hit"
 
 export interface DebugTexturesProps {
   textures: Record<string, Texture>
+  defaultTexture?: string
 }
 
-export function DebugTextures({ textures }: DebugTexturesProps) {
+export function DebugTextures({
+  textures,
+  defaultTexture = "screen"
+}: DebugTexturesProps) {
   const gl = useOGL((state) => state.gl)
   const camera = useMemo(() => new Camera(gl), [gl])
   const numTextures = Object.keys(textures).length
@@ -41,8 +45,8 @@ export function DebugTextures({ textures }: DebugTexturesProps) {
         value:
           typeof window !== "undefined"
             ? new URLSearchParams(window.location.search).get("debugTarget") ||
-              "screen"
-            : "screen",
+              defaultTexture
+            : defaultTexture,
         options: Object.keys(textures).concat("all"),
         onChange: (value) => {
           if (typeof window !== "undefined") {
