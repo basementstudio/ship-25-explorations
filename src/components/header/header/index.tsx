@@ -18,7 +18,8 @@ const navLinks: HeaderLink[] = [
   { name: "ferro", url: "/ferro" },
   { name: "ferro-pyramid", url: "/ferro-pyramid" },
   { name: "particles", url: "/particles" },
-  { name: "water", url: "/water" }
+  { name: "water", url: "/water" },
+  { name: "svg-displacement", url: "/svg-displacement" }
 ]
 
 export const Header = () => {
@@ -45,16 +46,6 @@ export const Header = () => {
               </svg>
             </Link>
           </div>
-          <ul className="hidden md:flex items-center gap-[0.925rem]">
-            {navLinks.map(({ name, url }) => (
-              <li
-                key={name}
-                className="text-[max(16px,0.925vw)] font-light relative after:content-[''] after:absolute after:w-full after:scale-x-0 after:h-[1px] after:bottom-[-1px] after:left-0 after:bg-white after:origin-bottom-right after:transition-transform after:duration-150 after:ease-in-out hover:after:scale-x-100 hover:after:origin-bottom-left"
-              >
-                <Link href={url}>{name}</Link>
-              </li>
-            ))}
-          </ul>
           <MobileMenu links={navLinks} />
         </header>
       </div>
