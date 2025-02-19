@@ -37,7 +37,7 @@ void main() {
 
   float d = 0.0;
 
-  float mouseMin = 20.5;
+  float mouseMin = 10.5;
   float mouseMax = 0.0;
 
   d =
@@ -47,11 +47,11 @@ void main() {
       length(uMouse.xy * uResolution.xy - gl_FragCoord.xy)
     ) *
     mouseInfluence *
-    10.0;
+    0.1;
 
   // The actual propagation:
   d += -(p11 - 0.5) * 2.0 + (p10 + p01 + p21 + p12 - 2.0);
-  d *= 0.985; // damping
+  d *= 0.9; // damping
   d = d * 0.5 + 0.5;
 
   // Put previous state as "y":
