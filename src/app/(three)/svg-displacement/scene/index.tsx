@@ -1,48 +1,53 @@
 "use client"
 
-import { createPortal, useFrame, useThree } from "@react-three/fiber"
-import { useEffect, useMemo, useRef } from "react"
+import { createPortal, ThreeEvent, useFrame } from "@react-three/fiber"
+import { useCallback, useMemo } from "react"
 import * as THREE from "three"
 
 import { useMaterials } from "./use-materials"
 import { useTargets } from "./use-targets"
 export function Scene() {
-  const { size } = useThree()
-  const mouseRef = useRef({ x: 0, y: 0, velocity: 0 })
-  const prevMouseRef = useRef({ x: 0, y: 0 })
+  const vRefs = useMemo(
+    () => ({
+      uv: new THREE.Vector2(),
+      smoothUv: new THREE.Vector2(),
+      prevSmoothUv: new THREE.Vector2(),
+      velocity: new THREE.Vector2(),
+      shouldReset: true
+    }),
+    []
+  )
 
   const targets = useTargets()
   const { flowFbo } = targets
   const materials = useMaterials(targets)
   const { flowMaterial } = materials
 
-  // Handle mouse movement
-  useEffect(() => {
-    const handleMouseMove = (event: MouseEvent) => {
-      const x = event.clientX / size.width
-      const y = 1 - event.clientY / size.height
+  const handlePointerMove = useCallback((e: ThreeEvent<PointerEvent>) => {
+    if (e.uv) {
+      vRefs.uv.copy(e.uv)
+    }
+  }, [])
 
-      const dx = x - prevMouseRef.current.x
-      const dy = y - prevMouseRef.current.y
-      const velocity = Math.sqrt(dx * dx + dy * dy)
-
-      mouseRef.current = { x, y, velocity }
-      prevMouseRef.current = { x, y }
+  // smooth mouse
+  useFrame((_, delta) => {
+    if (vRefs.shouldReset) {
+      vRefs.smoothUv.copy(vRefs.uv)
+      vRefs.prevSmoothUv.copy(vRefs.uv)
+      vRefs.shouldReset = false
     }
 
-    window.addEventListener("mousemove", handleMouseMove)
-    return () => window.removeEventListener("mousemove", handleMouseMove)
-  }, [size])
+    vRefs.prevSmoothUv.copy(vRefs.smoothUv)
+    vRefs.smoothUv.lerp(vRefs.uv, delta * 10)
+    vRefs.velocity.subVectors(vRefs.smoothUv, vRefs.prevSmoothUv)
+  })
 
   // Update flow simulation
-  useFrame(({ gl, camera, clock }, delta, frame) => {
+  useFrame(({ gl, camera, clock }, _delta, frame) => {
     // Update uniforms
-    flowMaterial.uniforms.uMouse.value.set(
-      mouseRef.current.x,
-      mouseRef.current.y
-    )
+    flowMaterial.uniforms.uMouse.value.set(vRefs.smoothUv.x, vRefs.smoothUv.y)
     flowMaterial.uniforms.uFlowFeedBackTexture.value = flowFbo.read.texture
-    flowMaterial.uniforms.uMouseVelocity.value = mouseRef.current.velocity
+    flowMaterial.uniforms.uMouseVelocity.value = vRefs.velocity.length()
     flowMaterial.uniforms.uFrame.value = frame
     flowMaterial.uniforms.uTime.value = clock.getElapsedTime()
 
@@ -50,9 +55,6 @@ export function Scene() {
     gl.setRenderTarget(flowFbo.write)
     gl.render(flowScene, camera)
     gl.setRenderTarget(null)
-
-    // Render to next target
-    // renderCopy.copy(flowTargets[1].texture, flowTargets[0])
 
     flowFbo.swap()
   })
@@ -68,13 +70,13 @@ export function Scene() {
         </mesh>,
         flowScene
       )}
-      <mesh position={[0, 0, 0.01]}>
+      <mesh
+        position={[0, 0, 0]}
+        onPointerMove={handlePointerMove}
+        onPointerOver={() => (vRefs.shouldReset = true)}
+      >
         <planeGeometry args={[2, 2]} />
         <meshBasicMaterial map={flowFbo.read.texture} />
-      </mesh>
-      <mesh position={[0, 2, 0.01]}>
-        <planeGeometry args={[2, 2]} />
-        <meshBasicMaterial map={flowFbo.write.texture} />
       </mesh>
     </>
   )
