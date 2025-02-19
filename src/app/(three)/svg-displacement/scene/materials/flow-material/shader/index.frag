@@ -47,11 +47,20 @@ void main() {
       length(uMouse.xy * uResolution.xy - gl_FragCoord.xy)
     ) *
     mouseInfluence *
-    0.1;
+    10.1;
+
+  // automatic sin wave
+  vec2 sinWavePos =
+    vec2(sin(uTime * 2.23436197) * 1.5, cos(uTime * 3.1343121)) * 0.2;
+  float sDist = length(sinWavePos - vUv + vec2(0.5) + vec2(0.0, 0.2));
+  sDist = valueRemap(sDist, 0.0, 0.03, 1.0, 0.0);
+  sDist = clamp(sDist, 0.0, 1.0);
+  d += sDist;
 
   // The actual propagation:
+  // The actual propagation:
   d += -(p11 - 0.5) * 2.0 + (p10 + p01 + p21 + p12 - 2.0);
-  d *= 0.9; // damping
+  d *= 0.995; // damping
   d = d * 0.5 + 0.5;
 
   // Put previous state as "y":

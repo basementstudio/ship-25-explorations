@@ -6,6 +6,8 @@ import { Scene } from "./scene"
 export function Form() {
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
+  const [nameFocused, setNameFocused] = useState(false)
+  const [emailFocused, setEmailFocused] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -39,6 +41,10 @@ export function Form() {
             email={email}
             setName={setName}
             setEmail={setEmail}
+            nameFocused={nameFocused}
+            emailFocused={emailFocused}
+            setNameFocused={setNameFocused}
+            setEmailFocused={setEmailFocused}
             isReflection={false}
             isLoading={isLoading}
             isSubmitted={isSubmitted}
@@ -49,15 +55,19 @@ export function Form() {
         {/* Reflected Content */}
         <div className="relative">
           <div
-            className="opacity-30 pointer-events-none"
+            className="opacity-30 pointer-events-none py-4"
             style={reflectionStyle}
           >
-            <div className="scale-y-[-1]">
+            <div className="scale-y-[-1] blur-[2px]">
               <Content
                 name={name}
                 email={email}
                 setName={setName}
                 setEmail={setEmail}
+                nameFocused={nameFocused}
+                emailFocused={emailFocused}
+                setNameFocused={setNameFocused}
+                setEmailFocused={setEmailFocused}
                 isReflection={true}
                 isLoading={isLoading}
                 isSubmitted={isSubmitted}
@@ -67,7 +77,7 @@ export function Form() {
           </div>
           <Canvas
             dpr={0.5}
-            className="!absolute top-0 left-0 !w-full !h-full opacity-20"
+            className="!absolute top-0 left-0 !w-full !h-full opacity-0"
             id="displacementCanvasContainer"
           >
             <Scene />
@@ -83,7 +93,7 @@ export function Form() {
               result="displacementMap"
             />
             <feDisplacementMap
-              scale="3"
+              scale="100"
               in="SourceGraphic"
               in2="displacementMap"
               xChannelSelector="R"
