@@ -27,6 +27,28 @@ export function Form() {
   }
 
   const displacementMapRef = useRef<SVGFEImageElement | null>(null)
+  const [formOuterContainer, setFormOuterContainer] =
+    useState<HTMLDivElement | null>(null)
+  const [formInnerContainer, setFormInnerContainer] =
+    useState<HTMLDivElement | null>(null)
+
+  const [displacementMapHeight, setDisplacementMapHeight] = useState(0)
+
+  useEffect(() => {
+    if (!formOuterContainer || !formInnerContainer) return
+    const controller = new AbortController()
+    const signal = controller.signal
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0]
+      const { height } = entry.contentRect
+      formOuterContainer.style.minHeight = `${height * 2}px`
+    })
+    observer.observe(formInnerContainer)
+    return () => {
+      controller.abort()
+      observer.disconnect()
+    }
+  }, [formOuterContainer, formInnerContainer])
 
   return (
     <div
@@ -34,31 +56,14 @@ export function Form() {
       ref={containerRef}
     >
       <div className="w-full max-w-4xl mx-auto">
-        {/* Original Content */}
-        <div className="mb-8">
-          <Content
-            name={name}
-            email={email}
-            setName={setName}
-            setEmail={setEmail}
-            nameFocused={nameFocused}
-            emailFocused={emailFocused}
-            setNameFocused={setNameFocused}
-            setEmailFocused={setEmailFocused}
-            isReflection={false}
-            isLoading={isLoading}
-            isSubmitted={isSubmitted}
-            onSubmit={handleSubmit}
-          />
-        </div>
-
-        {/* Reflected Content */}
         <div className="relative">
           <div
-            className="opacity-30 pointer-events-none py-4"
+            className="relative"
+            ref={setFormOuterContainer}
             style={reflectionStyle}
           >
-            <div className="scale-y-[-1] blur-[2px]">
+            {/* Original Content */}
+            <div className="relative" ref={setFormInnerContainer}>
               <Content
                 name={name}
                 email={email}
@@ -68,16 +73,16 @@ export function Form() {
                 emailFocused={emailFocused}
                 setNameFocused={setNameFocused}
                 setEmailFocused={setEmailFocused}
-                isReflection={true}
+                isReflection={false}
                 isLoading={isLoading}
                 isSubmitted={isSubmitted}
-                onSubmit={() => {}}
+                onSubmit={handleSubmit}
               />
             </div>
           </div>
           <Canvas
             dpr={0.5}
-            className="!absolute top-0 left-0 !w-full !h-full opacity-0"
+            className="!absolute top-0 left-0 !w-full !h-full opacity-10 !pointer-events-none"
             id="displacementCanvasContainer"
           >
             <Scene />
@@ -93,7 +98,7 @@ export function Form() {
               result="displacementMap"
             />
             <feDisplacementMap
-              scale="100"
+              scale="500"
               in="SourceGraphic"
               in2="displacementMap"
               xChannelSelector="R"

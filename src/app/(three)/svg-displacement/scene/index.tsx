@@ -61,8 +61,13 @@ export function Scene() {
     vRefs.velocity.subVectors(vRefs.smoothUv, vRefs.prevSmoothUv)
   })
 
+  const size = useThree((state) => state.size)
+
   // Update flow simulation
   useFrame(({ gl, camera, scene, clock }, _delta, frame) => {
+    gl.setClearColor(new THREE.Color(0, 0, 0), 1)
+    gl.setViewport(0, 0, size.width, size.height)
+
     // Update uniformsscene
     flowMaterial.uniforms.uMouse.value.set(vRefs.smoothUv.x, vRefs.smoothUv.y)
     flowMaterial.uniforms.uFlowFeedBackTexture.value = flowFbo.read.texture
@@ -76,6 +81,12 @@ export function Scene() {
     gl.setRenderTarget(null)
 
     flowFbo.swap()
+
+    gl.setClearColor(new THREE.Color(0.5, 0.5, 0), 1)
+
+    gl.clear()
+
+    gl.setViewport(0, 0, size.width, size.height / 2)
 
     gl.render(scene, camera)
 
