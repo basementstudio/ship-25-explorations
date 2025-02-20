@@ -26,8 +26,6 @@ export function Form() {
     willChange: "filter"
   }
 
-  const displacementMapRef = useRef<SVGFEImageElement | null>(null)
-
   return (
     <div
       className={`min-h-screen bg-black text-white flex flex-col items-center justify-center p-4`}
@@ -55,6 +53,7 @@ export function Form() {
         {/* Reflected Content */}
         <div className="relative">
           <div
+            id="reflection-container"
             className="opacity-30 pointer-events-none py-4"
             style={reflectionStyle}
           >
@@ -87,11 +86,7 @@ export function Form() {
         {/* SVG Filter */}
         <svg width="0" height="0">
           <filter id="reflection-filter">
-            <feImage
-              ref={displacementMapRef}
-              id="displacementMapImage"
-              result="displacementMap"
-            />
+            <feImage id="displacementMapImage" result="displacementMap" />
             <feDisplacementMap
               scale="100"
               in="SourceGraphic"
