@@ -1,6 +1,7 @@
 import { RawShaderMaterial } from "three"
-import vertexShader from "./shader/index.frag"
-import fragmentShader from "./shader/index.vert"
+
+import fragmentShader from "./shader/index.frag"
+import vertexShader from "./shader/index.vert"
 
 export const getMapDebugProgram = () => {
   const program = new RawShaderMaterial({

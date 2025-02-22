@@ -1,17 +1,21 @@
+import { useThree } from "@react-three/fiber"
 import { useMemo } from "react"
+import { PerspectiveCamera, Vector2, Vector3 } from "three"
 
 import { createFlowMaterial } from "./materials/flow-material"
-import { flowSize, SceneTargets } from "./use-targets"
 import { createFlowNormalMaterial } from "./materials/flow-normal-material"
 import { getMapDebugProgram } from "./materials/map-debug-program"
 import { getRaymarchProgram } from "./materials/raymarch-program"
-import { PerspectiveCamera, Vector2, Vector3 } from "three"
 import type { Assets } from "./use-assets"
-import { useThree } from "@react-three/fiber"
+import { flowSize, SceneTargets } from "./use-targets"
 
 export type SceneMaterials = ReturnType<typeof useMaterials>
 
-export function useMaterials(targets: SceneTargets, assets: Assets, camera: PerspectiveCamera) {
+export function useMaterials(
+  targets: SceneTargets,
+  assets: Assets,
+  camera: PerspectiveCamera
+) {
   const size = useThree((state) => state.size)
   const materials = useMemo(() => {
     const flowMaterial = createFlowMaterial(
@@ -24,29 +28,32 @@ export function useMaterials(targets: SceneTargets, assets: Assets, camera: Pers
 
     const mapDebugProgram = getMapDebugProgram()
 
-    const raymarchProgram = getRaymarchProgram()
-    raymarchProgram.uniforms.time = { value: 0.0 }
-    raymarchProgram.uniforms.uNear = { value: camera.near }
-    raymarchProgram.uniforms.uFar = { value: camera.far }
-    raymarchProgram.uniforms.uHitPosition = { value: new Vector3() }
-    raymarchProgram.uniforms.noiseScale = { value: 5.0 }
-    raymarchProgram.uniforms.noiseLength = { value: 0.4 }
-    raymarchProgram.uniforms.uFlowTexture = { value: targets.flowFbo.read.texture }
-    raymarchProgram.uniforms.fov = { value: camera.fov }
-    raymarchProgram.uniforms.cameraQuaternion = { value: camera.quaternion }
-    raymarchProgram.uniforms.resolution = {
+    const raymarchMaterial = getRaymarchProgram()
+    raymarchMaterial.uniforms.uFlowSize = { value: 0.001 }
+    raymarchMaterial.uniforms.time = { value: 0.0 }
+    raymarchMaterial.uniforms.uNear = { value: camera.near }
+    raymarchMaterial.uniforms.uFar = { value: camera.far }
+    raymarchMaterial.uniforms.uHitPosition = { value: new Vector3() }
+    raymarchMaterial.uniforms.noiseScale = { value: 5.0 }
+    raymarchMaterial.uniforms.noiseLength = { value: 0.4 }
+    raymarchMaterial.uniforms.uFlowTexture = {
+      value: targets.flowFbo.read.texture
+    }
+    raymarchMaterial.uniforms.fov = { value: camera.fov }
+    raymarchMaterial.uniforms.cameraQuaternion = { value: camera.quaternion }
+    raymarchMaterial.uniforms.resolution = {
       value: new Vector2(size.width, size.height)
     }
-    raymarchProgram.uniforms.pyramidReveal = { value: 0.0 }
-    raymarchProgram.uniforms.mouseSpeed = { value: 0.0 }
+    raymarchMaterial.uniforms.pyramidReveal = { value: 0.0 }
+    raymarchMaterial.uniforms.mouseSpeed = { value: 0.0 }
 
-    raymarchProgram.uniforms.uNoiseTexture = { value: assets.noiseMap }
+    raymarchMaterial.uniforms.uNoiseTexture = { value: assets.noiseMap }
 
     return {
       flowMaterial,
       flowNormalMaterial,
       mapDebugProgram,
-      raymarchProgram
+      raymarchMaterial
     }
   }, [targets])
 

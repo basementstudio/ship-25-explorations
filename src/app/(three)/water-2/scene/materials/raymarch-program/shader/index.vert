@@ -20,6 +20,6 @@ void main() {
   vec3 pos = position;
 
   wPos = (modelMatrix * vec4(pos, 1.0)).xyz;
-  gl_Position = vec4(pos, 1.0);
+  gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
   vScreenUV = gl_Position.xy / gl_Position.w * 0.5 + 0.5;
 }

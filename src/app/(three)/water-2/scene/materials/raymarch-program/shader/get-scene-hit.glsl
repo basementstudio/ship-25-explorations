@@ -13,6 +13,7 @@ uniform float pyramidReveal;
 uniform sampler2D uNoiseTexture;
 uniform float mouseSpeed;
 uniform mat4 uPyramidMatrix;
+uniform float uFlowSize;
 // AVAILABLE: uniform float time;
 
 float sdSphere(vec3 position, float radius) {
@@ -173,44 +174,50 @@ float getSpikesHit(vec3 pos, float flow) {
   return sinCos;
 }
 
-float flowScale = 2.5;
+float flowEdge = 0.002;
 
-vec4 getFlowHit(vec3 p) {
+float getFlowHit(vec3 p) {
   vec2 uv = p.xz;
   uv = vec2(
-    valueRemap(uv.x, -flowScale, flowScale, 0.0, 1.0),
-    valueRemap(uv.y, -flowScale, flowScale, 0.0, 1.0)
+    valueRemap(uv.x, -uFlowSize, uFlowSize, 0.0, 1.0),
+    valueRemap(uv.y, -uFlowSize, uFlowSize, 0.0, 1.0)
   );
-  // uv += 1.0 * flowScale;
-  // uv /= 2.0 * flowScale;
   uv = clamp(uv, 0.0, 1.0);
   uv.y = 1.0 - uv.y;
-  vec4 flow = blurTexture(uFlowTexture, uv);
+  float flow = texture(uFlowTexture, uv).x;
+  // flow = smoothstep(0.0, 1.0, flow);
+  // remap from 0-1 to -1-1
+  flow *= 2.0;
+  flow -= 1.0;
+
+  // flow = almostUnitIdentity(flow);
+  // flow = -0.2;
+
+  flow *= 0.2;
 
   // smoot out to edges
-  float edge = smoothstep(0.0, 0.1, uv.x);
-  edge *= smoothstep(0.0, 0.1, uv.y);
-  edge *= smoothstep(1.0, 0.9, uv.x);
-  edge *= smoothstep(1.0, 0.9, uv.y);
+  float edge = smoothstep(0.0, flowEdge, uv.x);
+  edge *= smoothstep(0.0, flowEdge, uv.y);
+  edge *= smoothstep(1.0, 1.0 - flowEdge, uv.x);
+  edge *= smoothstep(1.0, 1.0 - flowEdge, uv.y);
 
-  flow.x -= 0.5;
-  flow.x *= 2.0;
-  flow.x = almostUnitIdentity(flow.x);
-  flow.x *= 0.5;
-  return flow * edge;
+  return flow;
 }
 
 float getFloorHit(vec3 p) {
   // plane with flow
-  vec4 flow = getFlowHit(p);
+  float flow = getFlowHit(p);
   float planeY = 0.0;
-  planeY += flow.x * 0.1 - 0.01;
+  planeY += flow;
   vec3 pPlane = p - vec3(0.0, planeY, 0.0);
   float plane = sdPlane(pPlane);
   return plane;
 }
 
 float getSceneHit(vec3 p) {
+  float floorHit = getFloorHit(p);
+  return floorHit * 0.3;
+
   float noise =
     snoise3((p.xyz * 1.5 + vec3(0.0, time * 2.1, time * 0.2)) * 5.0) * 0.5 +
     0.5;

@@ -24,7 +24,7 @@ uniform vec4 cameraQuaternion;
 #pragma glslify: unpackRGB = require('../../glsl-shared/unpack-rgb.glsl')
 #pragma glslify: getThickness = require('./get-thickness.glsl')
 
-out vec4 fragColor[2];
+out vec4 fragColor;
 
 float getDepth(float raymarchTravel) {
   // Get the current linear depth (distance from camera)
@@ -62,39 +62,13 @@ vec3 quaterion_rotate(vec3 v, vec4 q) {
 }
 
 void main() {
-  // float insideZ = unpackRGB(texture(uInsideDepthTexture, vScreenUV).rgb);
-  // float outsideZ = gl_FragCoord.z;
+  float outsideZ = gl_FragCoord.z;
 
-  // float thickness = getThickness(insideZ, outsideZ, uNear, uFar);
+  vec3 viewDirection = normalize(wPos - cameraPosition);
 
-  // vec3 viewDirectionIor = getViewDirectionIor();
-
-  // RaymarchResult result = rayMarch(wPos, viewDirectionIor, thickness);
-  // fragColor[0] = result.color;
-
-  // float depth = getDepth(result.depth);
-  // depth = mix(insideZ, depth, result.color.a);
+  RaymarchResult result = rayMarch(wPos, viewDirection, 10.0);
+  fragColor = result.color;
 
   // fragColor[1] = vec4(packRGB(depth), 1.0);
 
-  // get camera ray
-  float aspectRatio = resolution.x / resolution.y;
-  vec3 cameraOrigin = cameraPosition;
-  float fovMult = fov / 90.0;
-  vec2 screenPos = (gl_FragCoord.xy * 2.0 - resolution) / resolution;
-  screenPos.x *= aspectRatio;
-  screenPos *= fovMult;
-  vec3 ray = vec3(screenPos.xy, -1.0);
-  ray = quaterion_rotate(ray, cameraQuaternion);
-  ray = normalize(ray);
-
-  vec3 rayOrigin = cameraPosition + ray * uNear;
-
-  RaymarchResult result = rayMarch(rayOrigin, ray, uFar - uNear);
-  fragColor[0] = result.color;
-
-  float depth = getDepth(result.depth);
-  depth = 0.5;
-
-  fragColor[1] = vec4(packRGB(depth), 1.0);
 }

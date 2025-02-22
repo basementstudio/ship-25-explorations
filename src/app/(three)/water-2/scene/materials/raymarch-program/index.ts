@@ -17,7 +17,5 @@ export function getRaymarchProgram() {
     }
   })
 
-
-
   return program
 }
