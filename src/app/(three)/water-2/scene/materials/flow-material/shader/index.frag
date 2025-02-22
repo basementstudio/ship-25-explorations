@@ -63,7 +63,7 @@ Mouse getMouseWave() {
 
   mouseWave = dirMouseDist * stepMouse * clampedMouseInfluence * 0.3;
 
-  float mouseMixer = clamp(uMouseVelocity * 2.0, 0.0, 1.0);
+  float mouseMixer = clamp(uMouseVelocity * 10.0, 0.0, 1.0);
   mouseMixer *= mouseDist * 0.2;
 
   return Mouse(mouseWave, dirMouseDist, mouseDist, stepMouse, mouseMixer);
