@@ -174,7 +174,7 @@ float getSpikesHit(vec3 pos, float flow) {
   return sinCos;
 }
 
-float flowEdge = 0.002;
+float flowEdge = 0.4;
 
 float getFlowHit(vec3 p) {
   vec2 uv = p.xz;
@@ -200,6 +200,9 @@ float getFlowHit(vec3 p) {
   edge *= smoothstep(0.0, flowEdge, uv.y);
   edge *= smoothstep(1.0, 1.0 - flowEdge, uv.x);
   edge *= smoothstep(1.0, 1.0 - flowEdge, uv.y);
+  // edge = 1.0 - edge;
+
+  flow *= edge;
 
   return flow;
 }
