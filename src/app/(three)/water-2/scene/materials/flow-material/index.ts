@@ -10,6 +10,7 @@ export function createFlowMaterial(
   const m = new THREE.RawShaderMaterial({
     vertexShader,
     fragmentShader,
+
     uniforms: {
       uFlowFeedBackTexture: { value: flowFeedbackTexture },
       uMouse: { value: new THREE.Vector2() },

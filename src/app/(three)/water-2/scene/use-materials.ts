@@ -1,6 +1,6 @@
 import { useThree } from "@react-three/fiber"
 import { useMemo } from "react"
-import { PerspectiveCamera, Vector2, Vector3 } from "three"
+import { Matrix4, PerspectiveCamera, Vector2, Vector3 } from "three"
 
 import { createFlowMaterial } from "./materials/flow-material"
 import { createFlowNormalMaterial } from "./materials/flow-normal-material"
@@ -8,22 +8,32 @@ import { getMapDebugProgram } from "./materials/map-debug-program"
 import { getRaymarchProgram } from "./materials/raymarch-program"
 import type { Assets } from "./use-assets"
 import { flowSize, SceneTargets } from "./use-targets"
+import { createOrbeRaymarchMaterial } from "./materials/orbe-raymarch-material"
 
 export type SceneMaterials = ReturnType<typeof useMaterials>
 
 export function useMaterials(targets: SceneTargets, assets: Assets) {
   const size = useThree((state) => state.size)
   const materials = useMemo(() => {
+    // FLOW MATERIAL (floor)
     const flowMaterial = createFlowMaterial(
       targets.flowFbo.read.texture,
       flowSize
     )
 
+    // FLOW MATERIAL (orbe)
+    const orbeFlowMaterial = createFlowMaterial(
+      targets.orbeFlowFbo.read.texture,
+      flowSize
+    )
+
+    // FLOW NORMAL MATERIAL (TODO delete)
     const flowNormalMaterial = createFlowNormalMaterial()
     flowNormalMaterial.uniforms.uHeightmap.value = targets.flowFbo.read.texture
 
     const mapDebugProgram = getMapDebugProgram()
 
+    // WATER FLOOR MATERIAL
     const raymarchMaterial = getRaymarchProgram()
     raymarchMaterial.uniforms.uFlowSize = { value: 0.001 }
     raymarchMaterial.uniforms.time = { value: 0.0 }
@@ -42,8 +52,29 @@ export function useMaterials(targets: SceneTargets, assets: Assets) {
     }
     raymarchMaterial.uniforms.pyramidReveal = { value: 0.0 }
     raymarchMaterial.uniforms.mouseSpeed = { value: 0.0 }
-
     raymarchMaterial.uniforms.uNoiseTexture = { value: assets.noiseMap }
+
+    // ORBE material
+    const orbeRaymarchMaterial = createOrbeRaymarchMaterial()
+    orbeRaymarchMaterial.uniforms.uFlowSize = { value: 0.001 }
+    orbeRaymarchMaterial.uniforms.time = { value: 0.0 }
+    orbeRaymarchMaterial.uniforms.uNear = { value: 0.1 }
+    orbeRaymarchMaterial.uniforms.uFar = { value: 10 }
+    orbeRaymarchMaterial.uniforms.uHitPosition = { value: new Vector3() }
+    orbeRaymarchMaterial.uniforms.noiseScale = { value: 5.0 }
+    orbeRaymarchMaterial.uniforms.noiseLength = { value: 0.4 }
+    orbeRaymarchMaterial.uniforms.uFlowTexture = {
+      value: targets.orbeFlowFbo.read.texture
+    }
+    orbeRaymarchMaterial.uniforms.fov = { value: 45 }
+    orbeRaymarchMaterial.uniforms.cameraQuaternion = { value: null }
+    orbeRaymarchMaterial.uniforms.resolution = {
+      value: new Vector2(size.width, size.height)
+    }
+    orbeRaymarchMaterial.uniforms.pyramidReveal = { value: 0.0 }
+    orbeRaymarchMaterial.uniforms.mouseSpeed = { value: 0.0 }
+    orbeRaymarchMaterial.uniforms.uNoiseTexture = { value: assets.noiseMap }
+    orbeRaymarchMaterial.uniforms.uPyramidMatrix = { value: new Matrix4() }
 
     const updateFlowCamera = (camera: PerspectiveCamera) => {
       raymarchMaterial.uniforms.cameraQuaternion.value = camera.quaternion
@@ -52,9 +83,15 @@ export function useMaterials(targets: SceneTargets, assets: Assets) {
         size.width,
         size.height
       )
-
       raymarchMaterial.uniforms.uNear.value = camera.near
       raymarchMaterial.uniforms.uFar.value = camera.far
+
+      orbeRaymarchMaterial.uniforms.cameraQuaternion.value = camera.quaternion
+      orbeRaymarchMaterial.uniforms.fov.value = camera.fov
+      orbeRaymarchMaterial.uniforms.resolution.value = new Vector2(
+        size.width,
+        size.height
+      )
     }
 
     return {
@@ -62,6 +99,8 @@ export function useMaterials(targets: SceneTargets, assets: Assets) {
       flowNormalMaterial,
       mapDebugProgram,
       raymarchMaterial,
+      orbeRaymarchMaterial,
+      orbeFlowMaterial,
       updateFlowCamera
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -69,6 +108,11 @@ export function useMaterials(targets: SceneTargets, assets: Assets) {
 
   // update resolution related uniforms
   materials.raymarchMaterial.uniforms.resolution.value.set(
+    size.width,
+    size.height
+  )
+
+  materials.orbeRaymarchMaterial.uniforms.resolution.value.set(
     size.width,
     size.height
   )

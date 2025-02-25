@@ -2,7 +2,7 @@ import { useEffect, useMemo } from "react"
 import * as THREE from "three"
 import { RenderTargetOptions } from "three"
 
-type FBO = {
+export type DoubleFBO = {
   read: THREE.WebGLRenderTarget
   write: THREE.WebGLRenderTarget
   swap: () => void
@@ -13,7 +13,7 @@ export const useDoubleFBO = (
   width: number,
   height: number,
   options: RenderTargetOptions
-) => {
+): DoubleFBO => {
   const read = useMemo(() => {
     const fbo = new THREE.WebGLRenderTarget(width, height, options)
     return fbo
@@ -40,7 +40,7 @@ export const useDoubleFBO = (
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const fbo = useMemo<FBO>(
+  const fbo = useMemo<DoubleFBO>(
     () => ({
       read,
       write,

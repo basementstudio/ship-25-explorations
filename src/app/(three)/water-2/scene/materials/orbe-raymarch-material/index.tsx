@@ -3,14 +3,14 @@ import { GLSL3, RawShaderMaterial } from "three"
 import fragmentShader from "./shader/index.frag"
 import vertexShader from "./shader/index.vert"
 
-export const getMapDebugProgram = () => {
-  const program = new RawShaderMaterial({
+export function createOrbeRaymarchMaterial() {
+  return new RawShaderMaterial({
     vertexShader,
     fragmentShader,
     glslVersion: GLSL3,
+    depthTest: false,
     uniforms: {
-      uMap: { value: null }
+      uTime: { value: 0 }
     }
   })
-  return program
 }

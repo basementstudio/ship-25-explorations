@@ -52,7 +52,7 @@ export function Cameras() {
         near={1}
         far={3}
       />
-      <primitive object={orbitCamera} position={[2, 2, 2]} />
+      <primitive object={orbitCamera} position={[1.5, 1.5, 1.5]} />
       <OrbitControls camera={orbitCamera} />
     </>
   )

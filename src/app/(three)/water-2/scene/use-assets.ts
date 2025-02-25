@@ -1,9 +1,20 @@
-import { useTexture } from "@react-three/drei"
+import { useGLTF, useTexture } from "@react-three/drei"
 import { useMemo } from "react"
-
+import { GLTF } from "three-stdlib"
 export type Assets = ReturnType<typeof useAssets>
+import * as THREE from "three"
+
+interface SphereGLTFResult extends GLTF {
+  nodes: {
+    Cube: THREE.Mesh
+  }
+}
 
 export function useAssets() {
+
+  const { nodes } = useGLTF("/models/triangle-este-si.glb") as any as SphereGLTFResult
+  const pyramid = nodes['Cube'] as THREE.Mesh
+
   const envMap = useTexture("/textures/hdri4.png")
 
   const noiseMap = useTexture("/textures/noise-LDR_RGBA_63.png")
@@ -11,7 +22,8 @@ export function useAssets() {
   const assets = useMemo(() => {
     return {
       envMap,
-      noiseMap
+      noiseMap,
+      pyramid
     }
   }, [envMap, noiseMap])
 

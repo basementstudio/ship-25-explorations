@@ -14,11 +14,18 @@ export function useTargets() {
     magFilter: THREE.NearestFilter
   })
 
+  const orbeFlowFbo = useDoubleFBO(flowSize, flowSize, {
+    type: THREE.FloatType,
+    minFilter: THREE.NearestFilter,
+    magFilter: THREE.NearestFilter
+  })
+
   const targets = useMemo(() => {
     return {
-      flowFbo
+      flowFbo,
+      orbeFlowFbo
     }
-  }, [flowFbo])
+  }, [flowFbo, orbeFlowFbo])
 
   return targets
 }

@@ -1,5 +1,5 @@
 import { Mat4, Vec3 } from "ogl"
-import { RawShaderMaterial } from "three"
+import { GLSL3, RawShaderMaterial } from "three"
 
 import fragmentShader from "./shader/index.frag"
 import vertexShader from "./shader/index.vert"
@@ -12,6 +12,7 @@ export function getRaymarchProgram() {
   const program = new RawShaderMaterial({
     vertexShader,
     fragmentShader,
+    glslVersion: GLSL3,
     uniforms: {
       uPyramidMatrix: { value: pyramidMatrix }
     }
