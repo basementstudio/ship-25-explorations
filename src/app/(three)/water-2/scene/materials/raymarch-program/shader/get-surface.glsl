@@ -1,5 +1,5 @@
-#pragma glslify: getSceneHit = require('./get-scene-hit.glsl', time = time, texture = texture)
-#pragma glslify: getEnvColor = require('../../glsl-shared/get-env-color.glsl', texture = texture)
+#pragma glslify: getSceneHit = require('./get-scene-hit.glsl', time = time, texture = texture, textureSize = textureSize)
+#pragma glslify: getEnvColor = require('../../glsl-shared/get-env-color.glsl', texture = texture, textureSize = textureSize)
 
 uniform sampler2D uEnvMap;
 
@@ -35,13 +35,13 @@ vec3 getSurface(vec3 p, vec3 rayDirection) {
 
   vec3 reflectedNormal = reflect(viewDir, normal);
 
-  // vec3 light = getEnvColor(uEnvMap, reflectedNormal, viewDir);
+  vec3 light = getEnvColor(uEnvMap, reflectedNormal, viewDir);
 
-  vec3 light = getLight(p, normal);
+  // vec3 light = getLight(p, normal);
 
   // return reflectedNormal;
 
-  return normal;
+  return light;
 }
 
 #pragma glslify: export(getSurface)

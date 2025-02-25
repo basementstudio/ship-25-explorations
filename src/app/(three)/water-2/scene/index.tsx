@@ -135,7 +135,7 @@ export function Scene() {
       // Render flow sim
       gl.setRenderTarget(fbo.write)
       gl.render(scene, camera)
-      gl.setRenderTarget(screenFbo)
+      gl.setRenderTarget(null)
       fbo.swap()
     },
     [vRefsFloor, screenFbo]
@@ -145,6 +145,7 @@ export function Scene() {
   useFrame(({ gl, scene, clock }, delta) => {
     const shouldDoubleRender = delta > 1 / 75
 
+    // floor
     lerpMouseFloor(shouldDoubleRender ? delta / 2 : delta)
     renderFlow(
       gl,
@@ -156,7 +157,20 @@ export function Scene() {
       vRefsFloor
     )
 
+    // orbe
+    lerpMouseOrbe(shouldDoubleRender ? delta / 2 : delta)
+    renderFlow(
+      gl,
+      activeCamera,
+      orbeFlowScene,
+      clock,
+      orbeFlowMaterial,
+      orbeFlowFbo,
+      vRefsOrbe
+    )
+
     if (shouldDoubleRender) {
+      // floor
       lerpMouseFloor(delta / 2)
       renderFlow(
         gl,
@@ -167,19 +181,19 @@ export function Scene() {
         flowFbo,
         vRefsFloor
       )
-    }
 
-    // Update orbe flow simulation
-    lerpMouseOrbe(delta)
-    renderFlow(
-      gl,
-      activeCamera,
-      orbeFlowScene,
-      clock,
-      orbeFlowMaterial,
-      orbeFlowFbo,
-      vRefsOrbe
-    )
+      // orbe
+      lerpMouseOrbe(delta / 2)
+      renderFlow(
+        gl,
+        activeCamera,
+        orbeFlowScene,
+        clock,
+        orbeFlowMaterial,
+        orbeFlowFbo,
+        vRefsOrbe
+      )
+    }
 
     raymarchMaterial.uniforms.uFlowSize.value = FLOW_SIM_SIZE / 2
 
@@ -203,16 +217,6 @@ export function Scene() {
   )
 
   const orbeContainerRef = useRef<THREE.Mesh | THREE.Group | null>(null)
-
-  const pyramidV = useMemo(
-    () => ({
-      pyramidMatrix: new THREE.Matrix4(),
-      pyramidWorldPosition: new THREE.Vector3(),
-      pyramidWorldQuaternion: new THREE.Quaternion(),
-      pyramidScale: new THREE.Vector3(3, 3, 3)
-    }),
-    []
-  )
 
   useFrame(() => {
     const orbePointer = orbeContainerRef.current
@@ -310,7 +314,7 @@ export function Scene() {
       <Cameras />
 
       {/* Display textures */}
-      <DebugTextures textures={debugTextures} />
+      {/* <DebugTextures textures={debugTextures} /> */}
     </>
   )
 }

@@ -53,7 +53,8 @@ export function useMaterials(targets: SceneTargets, assets: Assets) {
     }
     raymarchMaterial.uniforms.pyramidReveal = { value: 0.0 }
     raymarchMaterial.uniforms.mouseSpeed = { value: 0.0 }
-    raymarchMaterial.uniforms.uNoiseTexture = { value: assets.noiseMap }
+    raymarchMaterial.uniforms.uNoiseTexture = { value: assets.noiseMap },
+      raymarchMaterial.uniforms.uEnvMap = { value: assets.envMap }
 
     // ORBE material
     const orbeRaymarchMaterial = createOrbeRaymarchMaterial()
@@ -76,7 +77,7 @@ export function useMaterials(targets: SceneTargets, assets: Assets) {
     orbeRaymarchMaterial.uniforms.mouseSpeed = { value: 0.0 }
     orbeRaymarchMaterial.uniforms.uNoiseTexture = { value: assets.noiseMap }
     orbeRaymarchMaterial.uniforms.uPyramidMatrix = { value: new Matrix4() }
-
+    orbeRaymarchMaterial.uniforms.uEnvMap = { value: assets.envMap }
     const updateFlowCamera = (camera: PerspectiveCamera) => {
       raymarchMaterial.uniforms.cameraQuaternion.value = camera.quaternion
       raymarchMaterial.uniforms.fov.value = camera.fov

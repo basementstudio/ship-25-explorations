@@ -13,7 +13,7 @@ uniform vec2 resolution;
 uniform vec4 cameraQuaternion;
 
 #pragma glslify: structsModule = require('./structs.glsl', RaymarchResult=RaymarchResult)
-#pragma glslify: rayMarch = require('./raymarch.glsl', wPos = wPos, time=time, RaymarchResult=RaymarchResult, texture = texture)
+#pragma glslify: rayMarch = require('./raymarch.glsl', wPos = wPos, time=time, RaymarchResult=RaymarchResult, texture = texture, textureSize = textureSize)
 #pragma glslify: depthModule = require('../../glsl-shared/depth.glsl', linearizeDepth = linearizeDepth, viewSpaceDepth = viewSpaceDepth)
 // #pragma glslify: getSurfaceNormal = require('../../glsl-shared/get-surface-normal.glsl')
 // #pragma glslify: rotateVector2 = require('../../glsl-shared/rotate-vector-2.glsl')
