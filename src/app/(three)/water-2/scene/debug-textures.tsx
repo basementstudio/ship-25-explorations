@@ -3,7 +3,7 @@ import { folder as levaFolder, useControls } from "leva"
 import { useCallback, useMemo } from "react"
 import { Group, OrthographicCamera, Texture } from "three"
 
-import { hitConfig } from "./"
+import { hitConfig } from "./event-manager"
 import { getMapDebugProgram } from "./materials/map-debug-program"
 
 export interface DebugTexturesProps {

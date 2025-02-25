@@ -1,7 +1,7 @@
 import { OrbitControls, useHelper } from "@react-three/drei"
 import { useThree } from "@react-three/fiber"
 import { useControls } from "leva"
-import { useRef } from "react"
+import { memo, useRef } from "react"
 import { CameraHelper, PerspectiveCamera } from "three"
 
 export const mainCamera = new PerspectiveCamera(
@@ -18,7 +18,9 @@ export const orbitCamera = new PerspectiveCamera(
   100
 )
 
-export function Cameras() {
+export const Cameras = memo(CamerasInner)
+
+function CamerasInner() {
   const activeCamera = useThree((state) => state.camera)
   const set = useThree((state) => state.set)
 

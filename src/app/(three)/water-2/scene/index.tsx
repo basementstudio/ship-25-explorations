@@ -1,6 +1,6 @@
 "use client"
 
-import { MeshDiscardMaterial, useFBO, Wireframe } from "@react-three/drei"
+import { useFBO } from "@react-three/drei"
 import {
   createPortal,
   ThreeEvent,
@@ -23,12 +23,7 @@ import { useMaterials } from "./use-materials"
 import { useTargets } from "./use-targets"
 import { LerpedMouse, useLerpMouse } from "./use-lerp-mouse"
 import { DoubleFBO } from "./use-double-fbo"
-import { DiscardMaterail } from "./materials/mesh-discard-material"
 import { useControls } from "leva"
-
-export const hitConfig = {
-  scale: 1
-}
 
 export function Scene() {
   const activeCamera = useThree((state) => state.camera)
@@ -55,7 +50,6 @@ export function Scene() {
       const point = e.point.clone().sub(ORBE_WATER_CENTER)
 
       const normal = point.normalize()
-      // pointerGroup.position.copy(normal)
 
       // Mercator projection for UV mapping
       const longitude = Math.atan2(normal.x, normal.z)
@@ -169,7 +163,7 @@ export function Scene() {
 
   const debugTextures = {
     flow: flowFbo.read.texture,
-    flowWrite: flowFbo.write.texture,
+    pyramidFlow: orbeFlowFbo.read.texture,
     screen: screenFbo.texture
   }
 
@@ -189,7 +183,7 @@ export function Scene() {
       pyramidMatrix: new THREE.Matrix4(),
       pyramidWorldPosition: new THREE.Vector3(),
       pyramidWorldQuaternion: new THREE.Quaternion(),
-      pyramidScale: new THREE.Vector3(10.01, 10.01, 10.01)
+      pyramidScale: new THREE.Vector3(3, 3, 3)
     }),
     []
   )
@@ -198,23 +192,19 @@ export function Scene() {
     const orbePointer = orbePointerRef.current
     if (!orbePointer) return
 
+    orbePointer.updateMatrix()
+    orbePointer.updateMatrixWorld()
+
     pyramidV.pyramidMatrix.identity()
 
     orbePointer.getWorldPosition(pyramidV.pyramidWorldPosition)
     orbePointer.getWorldQuaternion(pyramidV.pyramidWorldQuaternion)
 
-    // pyramidV.pyramidMatrix.makeRotationFromQuaternion(
-    //   pyramidV.pyramidWorldQuaternion
-    // )
-    pyramidV.pyramidMatrix.makeScale(2, 2, 2)
+    pyramidV.pyramidMatrix.scale(pyramidV.pyramidScale)
 
-    // pyramidV.pyramidMatrix.makeTranslation(
-    //   -pyramidV.pyramidWorldPosition.x,
-    //   -pyramidV.pyramidWorldPosition.y,
-    //   -pyramidV.pyramidWorldPosition.z
-    // )
-
-    // pyramidV.pyramidMatrix.invert()
+    pyramidV.pyramidMatrix.setPosition(
+      pyramidV.pyramidWorldPosition.multiplyScalar(-pyramidV.pyramidScale.x)
+    )
 
     orbeRaymarchMaterial.uniforms.uPyramidMatrix.value.copy(
       pyramidV.pyramidMatrix
@@ -256,7 +246,7 @@ export function Scene() {
       {/* Pointer events (orbe) */}
       <mesh
         visible={debugOrbe}
-        scale={[0.2, 0.2, 0.2]}
+        scale={[0.16, 0.24, 0.16]}
         rotation={[0, 0, 0]}
         position={[
           ORBE_WATER_CENTER.x,
@@ -268,7 +258,6 @@ export function Scene() {
         ref={orbePointerRef}
       >
         <primitive object={assets.pyramid.geometry} attach="geometry" />
-        {/* <DiscardMaterail /> */}
         <meshBasicMaterial depthTest={false} wireframe color={"red"} />
       </mesh>
 
