@@ -1,6 +1,6 @@
 import { createPortal, useFrame, useThree } from "@react-three/fiber"
 import { folder as levaFolder, useControls } from "leva"
-import { useCallback, useMemo } from "react"
+import { useCallback, useEffect, useMemo } from "react"
 import { Group, OrthographicCamera, Texture } from "three"
 
 import { hitConfig } from "./event-manager"
@@ -76,6 +76,12 @@ export function DebugTextures({
       gl.autoClear = prevAutoClear
     }
   }, [gl])
+
+  useEffect(() => {
+    return () => {
+      hitConfig.scale = 1
+    }
+  }, [])
 
   useFrame(() => {
     const resetGl = saveGlState()

@@ -13,6 +13,8 @@ export function getRaymarchProgram() {
     vertexShader,
     fragmentShader,
     glslVersion: GLSL3,
+    transparent: true,
+    depthWrite: true,
     uniforms: {
       uPyramidMatrix: { value: pyramidMatrix }
     }

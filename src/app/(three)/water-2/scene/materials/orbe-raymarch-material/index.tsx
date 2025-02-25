@@ -8,7 +8,8 @@ export function createOrbeRaymarchMaterial() {
     vertexShader,
     fragmentShader,
     glslVersion: GLSL3,
-    depthTest: false,
+    transparent: true,
+    depthWrite: true,
     uniforms: {
       uTime: { value: 0 }
     }

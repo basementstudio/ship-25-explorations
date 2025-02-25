@@ -196,8 +196,8 @@ float getFlowHit2(vec3 p) {
   return flow;
 }
 
-float maxPoint = 0.15;
-float gainConstant = 1.0 / 4.0;
+float maxPoint = 0.2698;
+float gainConstant = 1.0 / 2.0;
 
 float getFlowHit(vec3 p) {
   vec2 uv = vec2(
@@ -233,7 +233,7 @@ float getOrbeHit(vec3 pIn) {
   flowShift *= flow;
   p += flowShift;
 
-  float pyramidScale = 0.25;
+  float pyramidScale = 0.5;
 
   float hit = sdPyramid(p / pyramidScale, 1.0) * pyramidScale;
 

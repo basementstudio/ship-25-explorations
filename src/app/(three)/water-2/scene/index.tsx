@@ -29,6 +29,15 @@ import { valueRemap } from "~/lib/utils/math"
 export function Scene() {
   const activeCamera = useThree((state) => state.camera)
 
+  const [{ debugFloor, debugOrbe, renderFloor, renderOrbe, debugTextures }] =
+    useControls(() => ({
+      debugTextures: false,
+      debugFloor: false,
+      renderFloor: true,
+      debugOrbe: true,
+      renderOrbe: true
+    }))
+
   const targets = useTargets()
   const { flowFbo, orbeFlowFbo } = targets
   const assets = useAssets()
@@ -56,14 +65,15 @@ export function Scene() {
       e.stopPropagation()
       const point = e.point.clone().sub(ORBE_WATER_CENTER)
 
-      const maxPoint = 0.15
+      const maxPoint = 0.2698
 
-      const gainConstant = 1 / 4
+      const gainConstant = 1 / 2
 
       const p = new THREE.Vector2(
         valueRemap(point.x, -maxPoint, maxPoint, 0, 1),
         valueRemap(point.z, -maxPoint, maxPoint, 0, 1)
       )
+
       p.clamp(
         { x: 0, y: 0 },
         {
@@ -97,7 +107,24 @@ export function Scene() {
 
   const frameCount = useRef(0)
 
-  const screenFbo = useFBO()
+  const screenFbo = useMemo(() => {
+    const fbo = new THREE.WebGLRenderTarget(10, 10, {
+      depthBuffer: true,
+      depthTexture: new THREE.DepthTexture(10, 10)
+    })
+
+    if (typeof window !== "undefined") {
+      fbo.setSize(window.innerWidth, window.innerHeight)
+    }
+
+    return fbo
+  }, [])
+
+  const size = useThree((state) => state.size)
+
+  useEffect(() => {
+    screenFbo.setSize(size.width, size.height)
+  }, [size])
 
   useEffect(() => {
     // for dev reasons, reset frame count when material gets reloaded
@@ -136,10 +163,10 @@ export function Scene() {
       // Render flow sim
       gl.setRenderTarget(fbo.write)
       gl.render(scene, camera)
-      gl.setRenderTarget(null)
+      gl.setRenderTarget(debugTextures ? screenFbo : null)
       fbo.swap()
     },
-    [vRefsFloor, screenFbo]
+    [vRefsFloor, screenFbo, debugTextures]
   )
 
   // Update flow simulation
@@ -202,21 +229,6 @@ export function Scene() {
     frameCount.current++
   }, 1)
 
-  const debugTextures = {
-    flow: flowFbo.read.texture,
-    pyramidFlow: orbeFlowFbo.read.texture,
-    screen: screenFbo.texture
-  }
-
-  const [{ debugFloor, debugOrbe, renderFloor, renderOrbe }] = useControls(
-    () => ({
-      debugFloor: false,
-      renderFloor: true,
-      debugOrbe: false,
-      renderOrbe: true
-    })
-  )
-
   const orbeContainerRef = useRef<THREE.Mesh | THREE.Group | null>(null)
 
   useFrame(() => {
@@ -265,11 +277,11 @@ export function Scene() {
       {/* Pointer events (orbe) */}
       <mesh
         visible={debugOrbe}
-        scale={[0.16, 0.24, 0.16]}
+        scale={[0.27, 0.4, 0.27]}
         rotation={[0, 0, 0]}
         position={[
           ORBE_WATER_CENTER.x,
-          ORBE_WATER_CENTER.y - 0.15,
+          ORBE_WATER_CENTER.y - 0.12,
           ORBE_WATER_CENTER.z
         ]}
         onPointerMove={orbePointerMove}
@@ -298,24 +310,38 @@ export function Scene() {
 
       {/* Raymarched water (orbe) */}
       <mesh visible={renderOrbe} position={ORBE_WATER_CENTER as any}>
-        <group
-          // scale={0.2}
-          position={[0, 0, 0]}
-          ref={orbeContainerRef as any}
-        />
-        <boxGeometry args={[0.5, 0.5, 0.5, 5, 5, 5]} />
+        <group position={[0, 0, 0]} ref={orbeContainerRef as any} />
+        <boxGeometry args={[1, 1, 1, 5, 5, 5]} />
         <primitive object={orbeRaymarchMaterial} />
       </mesh>
 
-      <mesh visible={debugOrbe} position={ORBE_WATER_CENTER as any}>
-        <boxGeometry args={[0.5, 0.5, 0.5, 5, 5, 5]} />
-        <meshBasicMaterial wireframe color={"red"} depthTest={false} />
+      <mesh
+        renderOrder={2}
+        visible={debugOrbe}
+        position={ORBE_WATER_CENTER as any}
+      >
+        <boxGeometry args={[1, 1, 1, 1, 1, 1]} />
+        <meshBasicMaterial
+          wireframe
+          color={"red"}
+          depthTest={false}
+          transparent
+        />
       </mesh>
 
       <Cameras />
 
       {/* Display textures */}
-      {/* <DebugTextures textures={debugTextures} /> */}
+      {debugTextures && (
+        <DebugTextures
+          textures={{
+            flow: flowFbo.read.texture,
+            pyramidFlow: orbeFlowFbo.read.texture,
+            screen: screenFbo.texture,
+            screenDepth: screenFbo.depthTexture!
+          }}
+        />
+      )}
     </>
   )
 }

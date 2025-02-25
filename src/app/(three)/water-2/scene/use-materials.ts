@@ -25,7 +25,8 @@ export function useMaterials(targets: SceneTargets, assets: Assets) {
     // FLOW MATERIAL (orbe)
     const orbeFlowMaterial = createFlowMaterial(
       targets.orbeFlowFbo.read.texture,
-      flowSize
+      flowSize,
+      {}
     )
 
     // FLOW NORMAL MATERIAL (TODO delete)
@@ -94,6 +95,9 @@ export function useMaterials(targets: SceneTargets, assets: Assets) {
         size.width,
         size.height
       )
+      orbeRaymarchMaterial.uniforms.uNear.value = camera.near
+      orbeRaymarchMaterial.uniforms.uFar.value = camera.far
+
     }
 
     return {
