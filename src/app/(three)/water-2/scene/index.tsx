@@ -53,6 +53,7 @@ export function Scene() {
 
   const orbePointerMove = useCallback(
     (e: ThreeEvent<PointerEvent>) => {
+      e.stopPropagation()
       const point = e.point.clone().sub(ORBE_WATER_CENTER)
 
       const maxPoint = 0.15
