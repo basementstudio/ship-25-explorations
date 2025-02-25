@@ -5,12 +5,13 @@ import vertexShader from "./shader/index.vert"
 
 export function createFlowMaterial(
   flowFeedbackTexture: THREE.Texture,
-  textureSize: number
+  textureSize: number,
+  defines?: Record<string, string>
 ) {
   const m = new THREE.RawShaderMaterial({
     vertexShader,
     fragmentShader,
-
+    defines,
     uniforms: {
       uFlowFeedBackTexture: { value: flowFeedbackTexture },
       uMouse: { value: new THREE.Vector2() },

@@ -4,7 +4,7 @@
 uniform sampler2D uEnvMap;
 
 // Normal calculation function (using gradient):
-const vec3 GRADIENT_STEP = vec3(0.02, 0.0, 0.0);
+const vec3 GRADIENT_STEP = vec3(0.001, 0.0, 0.0);
 vec3 getNormal(vec3 p) {
   float gradientX =
     getSceneHit(p + GRADIENT_STEP.xyy) - getSceneHit(p - GRADIENT_STEP.xyy);

@@ -124,34 +124,25 @@ float getCircleSin(vec3 p) {
 }
 
 // objects
-float getOrbeHit(vec3 p) {
-  vec3 orbeP = p;
-  float pyramidMinP = -0.8;
-  float pyramidMaxP = 0.5;
-  float orbeYPos = mix(pyramidMinP, pyramidMaxP, pyramidReveal);
+float sdPyramid(vec3 p, float h) {
+  float m2 = h * h + 0.25;
 
-  float noiseAmmount = 1.0 - pyramidReveal;
+  p.xz = abs(p.xz);
+  p.xz = p.z > p.x ? p.zx : p.xz;
+  p.xz -= 0.5;
 
-  if (noiseAmmount > 0.0) {
-    float noise = snoise3(
-      (orbeP.xyz + vec3(0.0, time * 0.1 - orbeYPos * 0.9, time * 0.2)) * 5.0
-    );
+  vec3 q = vec3(p.z, h * p.y - 0.5 * p.x, h * p.x + 0.5 * p.y);
 
-    float noiseMult = 1.0 - expStep(noiseAmmount, 2.0);
+  float s = max(-q.x, 0.0);
+  float t = clamp((q.y - 0.5 * p.z) / (m2 + 0.25), 0.0, 1.0);
 
-    // hard noise
-    float noise1 = noise;
-    // noise1 = pow(noise1, 0.5);
-    noise1 *= noiseMult;
+  float a = m2 * (q.x + s) * (q.x + s) + q.y * q.y;
+  float b =
+    m2 * (q.x + 0.5 * t) * (q.x + 0.5 * t) + (q.y - m2 * t) * (q.y - m2 * t);
 
-    // orbeP.x += noise1 * 0.01;
-    orbeP.z += noise1 * 0.06;
-    orbeP.y += noise * 0.1 * noiseMult;
-  }
+  float d2 = min(q.y, -q.x * m2 - q.y * 0.5) > 0.0 ? 0.0 : min(a, b);
 
-  orbeP -= vec3(0.0, orbeYPos, 0.0);
-  float scale = 0.2;
-  return tetrahedron(orbeP, 0.2);
+  return sqrt((d2 + q.z * q.z) / m2) * sign(max(q.z, -p.y));
 }
 
 float getSpikesHit(vec3 pos, float flow) {
@@ -177,122 +168,50 @@ float getSpikesHit(vec3 pos, float flow) {
 float flowEdge = 0.4;
 
 float getFlowHit(vec3 p) {
-  vec2 uv = p.xz;
-  uv = vec2(
-    valueRemap(uv.x, -uFlowSize, uFlowSize, 0.0, 1.0),
-    valueRemap(uv.y, -uFlowSize, uFlowSize, 0.0, 1.0)
+  vec3 normal = normalize(p);
+  float longitude = atan(normal.x, normal.z);
+  float latitude = asin(normal.y);
+
+  vec2 uv = vec2(
+    0.5 + longitude / (2.0 * PI),
+    0.5 - log(tan(PI / 4.0 + latitude / 2.0)) / PI
   );
+
   uv = clamp(uv, 0.0, 1.0);
-  uv.y = 1.0 - uv.y;
+  // uv.y = 1.0 - uv.y;
   float flow = texture(uFlowTexture, uv).x;
-  // flow = smoothstep(0.0, 1.0, flow);
+
   // remap from 0-1 to -1-1
   flow *= 2.0;
   flow -= 1.0;
 
-  // flow = almostUnitIdentity(flow);
-  // flow = -0.2;
-
-  flow *= 0.2;
+  flow *= 0.1;
 
   // smoot out to edges
   float edge = smoothstep(0.0, flowEdge, uv.x);
   edge *= smoothstep(0.0, flowEdge, uv.y);
   edge *= smoothstep(1.0, 1.0 - flowEdge, uv.x);
   edge *= smoothstep(1.0, 1.0 - flowEdge, uv.y);
-  // edge = 1.0 - edge;
 
-  flow *= edge;
+  // flow *= edge;
+
+  // vec3 displacement = normal * flow;
 
   return flow;
 }
 
-float getFloorHit(vec3 p) {
-  // plane with flow
+float getOrbeHit(vec3 pIn) {
+  float orbeScale = 0.6;
+  vec3 p = (uPyramidMatrix * vec4(pIn, 1.0)).xyz / orbeScale;
   float flow = getFlowHit(p);
-  float planeY = 0.0;
-  planeY += flow;
-  vec3 pPlane = p - vec3(0.0, planeY, 0.0);
-  float plane = sdPlane(pPlane);
-  return plane;
-}
+  float hit = sdSphere(p, 0.3) - flow - 0.03;
 
-float sdPyramid(vec3 p, float h) {
-  float m2 = h * h + 0.25;
-
-  p.xz = abs(p.xz);
-  p.xz = p.z > p.x ? p.zx : p.xz;
-  p.xz -= 0.5;
-
-  vec3 q = vec3(p.z, h * p.y - 0.5 * p.x, h * p.x + 0.5 * p.y);
-
-  float s = max(-q.x, 0.0);
-  float t = clamp((q.y - 0.5 * p.z) / (m2 + 0.25), 0.0, 1.0);
-
-  float a = m2 * (q.x + s) * (q.x + s) + q.y * q.y;
-  float b =
-    m2 * (q.x + 0.5 * t) * (q.x + 0.5 * t) + (q.y - m2 * t) * (q.y - m2 * t);
-
-  float d2 = min(q.y, -q.x * m2 - q.y * 0.5) > 0.0 ? 0.0 : min(a, b);
-
-  return sqrt((d2 + q.z * q.z) / m2) * sign(max(q.z, -p.y));
+  return hit;
 }
 
 float getSceneHit(vec3 p) {
-  vec3 orbeP = (uPyramidMatrix * vec4(p, 1.0)).xyz;
-
-  float hit = sdPyramid(orbeP, 1.0);
-
+  float hit = getOrbeHit(p);
   return hit * 0.3;
 }
-
-// float getSceneHitOld(vec3 p) {
-//   float planeY = 0.0;
-//   float flow = getFlowHit(p);
-//   float clampFlow = clamp(flow, 0.0, 1.0);
-
-//   float ferroFlow = smoothstep(0.7, 1.0, flow);
-
-//   float spikes = getSpikesHit(p, flow);
-//   spikes = ferroFlow * spikes * 0.5;
-//   spikes *= 0.1;
-
-//   float bubble = smoothstep(0.7, 1.0, flow) * 0.05;
-//   planeY += spikes + bubble;
-
-//   float circleSin = getCircleSin(p);
-
-//   float noise = 0.0;
-//   noise += getNoise2(p);
-//   // remap flow from 0 to 1 to 0-1-0
-//   noise *= cos(clampFlow * PI * 2.0 + PI) * 0.5 + 0.5;
-//   noise *= circleSin;
-//   noise *= mouseSpeed;
-//   planeY += noise * 0.1;
-
-//   vec3 pPlane = p - vec3(0.0, planeY, 0.0);
-//   float plane = sdPlane(pPlane);
-
-//   // return plane;
-
-//   float normalMixer = cos(time * 5.0) * 0.5 + 0.5;
-//   normalMixer = gain(normalMixer, 3.0);
-
-//   float orbeHit = getOrbeHit(p);
-
-//   float hit;
-
-//   // hit = orbeHit;
-
-//   hit = mix3(
-//     plane,
-//     opSmoothUnion(plane, orbeHit, 0.5) + getNoise2(p) * 0.05,
-//     orbeHit,
-//     pyramidReveal
-//   );
-
-//   return hit;
-
-// }
 
 #pragma glslify: export(getSceneHit)

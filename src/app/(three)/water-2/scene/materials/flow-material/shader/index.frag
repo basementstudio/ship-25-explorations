@@ -107,9 +107,12 @@ void main() {
 
   // damping
   d *= 0.995;
+
+  #ifdef EDGE_DAMPING
   // edge damping
   float edge = getEdgeFactor();
   d = mix(d, 0.0, edge);
+  #endif
 
   // avoid too much noise
   d = max(d, -0.5);

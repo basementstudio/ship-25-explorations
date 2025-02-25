@@ -45,6 +45,8 @@ export function Scene() {
   const [handlePointerMoveFloor, lerpMouseFloor, vRefsFloor] = useLerpMouse()
   const [handlePointerMoveOrbe, lerpMouseOrbe, vRefsOrbe] = useLerpMouse()
 
+  const debugGroup = useMemo(() => new THREE.Group(), [])
+
   const orbePointerMove = useCallback(
     (e: ThreeEvent<PointerEvent>) => {
       const point = e.point.clone().sub(ORBE_WATER_CENTER)
@@ -176,7 +178,7 @@ export function Scene() {
     })
   )
 
-  const orbePointerRef = useRef<THREE.Mesh | null>(null)
+  const orbeContainerRef = useRef<THREE.Mesh | null>(null)
 
   const pyramidV = useMemo(
     () => ({
@@ -189,26 +191,26 @@ export function Scene() {
   )
 
   useFrame(() => {
-    const orbePointer = orbePointerRef.current
+    const orbePointer = orbeContainerRef.current
     if (!orbePointer) return
 
     orbePointer.updateMatrix()
     orbePointer.updateMatrixWorld()
 
-    pyramidV.pyramidMatrix.identity()
+    // pyramidV.pyramidMatrix.identity()
 
-    orbePointer.getWorldPosition(pyramidV.pyramidWorldPosition)
-    orbePointer.getWorldQuaternion(pyramidV.pyramidWorldQuaternion)
+    // orbePointer.getWorldPosition(pyramidV.pyramidWorldPosition)
+    // orbePointer.getWorldQuaternion(pyramidV.pyramidWorldQuaternion)
 
-    pyramidV.pyramidMatrix.scale(pyramidV.pyramidScale)
+    // pyramidV.pyramidMatrix.scale(pyramidV.pyramidScale)
 
-    pyramidV.pyramidMatrix.setPosition(
-      pyramidV.pyramidWorldPosition.multiplyScalar(-pyramidV.pyramidScale.x)
-    )
+    // pyramidV.pyramidMatrix.setPosition(
+    //   pyramidV.pyramidWorldPosition.multiplyScalar(-pyramidV.pyramidScale.x)
+    // )
 
-    orbeRaymarchMaterial.uniforms.uPyramidMatrix.value.copy(
-      pyramidV.pyramidMatrix
-    )
+    orbeRaymarchMaterial.uniforms.uPyramidMatrix.value
+      .copy(orbePointer.matrixWorld)
+      .invert()
   })
 
   return (
@@ -246,25 +248,31 @@ export function Scene() {
       {/* Pointer events (orbe) */}
       <mesh
         visible={debugOrbe}
-        scale={[0.16, 0.24, 0.16]}
+        // scale={[0.16, 0.24, 0.16]}
         rotation={[0, 0, 0]}
         position={[
           ORBE_WATER_CENTER.x,
-          ORBE_WATER_CENTER.y - 0.1,
+          ORBE_WATER_CENTER.y,
           ORBE_WATER_CENTER.z
         ]}
         onPointerMove={orbePointerMove}
         onPointerOver={() => (vRefsOrbe.shouldReset = true)}
-        ref={orbePointerRef}
       >
-        <primitive object={assets.pyramid.geometry} attach="geometry" />
-        <meshBasicMaterial depthTest={false} wireframe color={"red"} />
+        {/* <primitive object={assets.pyramid.geometry} attach="geometry" /> */}
+        <sphereGeometry args={[0.2, 16, 16]} />
+        <meshBasicMaterial
+          depthTest={false}
+          transparent
+          opacity={0.1}
+          wireframe
+          color={"white"}
+        />
       </mesh>
 
       {/* Raymarched water (floor) */}
       <mesh
+        ref={orbeContainerRef}
         visible={renderFloor}
-        rotation={[Math.PI / -2, 0, 0]}
         position={RAYMARCH_WATER_CENTER as any}
       >
         <planeGeometry args={[RAYMARCH_FLOW_SIZE * 2, RAYMARCH_FLOW_SIZE]} />
@@ -272,7 +280,7 @@ export function Scene() {
       </mesh>
 
       {/* Raymarched water (orbe) */}
-      <mesh position={ORBE_WATER_CENTER as any}>
+      <mesh visible={renderOrbe} position={ORBE_WATER_CENTER as any}>
         <boxGeometry args={[0.5, 0.5, 0.5]} />
         <primitive object={orbeRaymarchMaterial} />
       </mesh>
