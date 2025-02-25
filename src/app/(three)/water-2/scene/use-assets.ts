@@ -15,10 +15,12 @@ export function useAssets() {
   const { nodes } = useGLTF("/models/triangle-este-si.glb") as any as SphereGLTFResult
   const pyramid = nodes['Cube'] as THREE.Mesh
 
-  const envMap = useTexture("/textures/hdri-fluid.png")
+  const envMap = useTexture("/textures/hdri4.png")
 
   envMap.magFilter = THREE.NearestFilter
   envMap.minFilter = THREE.NearestFilter
+  envMap.wrapS = THREE.RepeatWrapping
+  envMap.wrapT = THREE.RepeatWrapping
 
   const noiseMap = useTexture("/textures/noise-LDR_RGBA_63.png")
 

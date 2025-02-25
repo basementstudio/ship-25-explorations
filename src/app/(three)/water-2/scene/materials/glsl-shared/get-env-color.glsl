@@ -14,15 +14,15 @@ vec2 normalToEnvUv(vec3 normal) {
 }
 
 vec4 textureGood(sampler2D sam, vec2 uv) {
-  float scale = 2912.0;
-  uv = uv * scale - 0.5;
+  vec2 texelSize = vec2(1.0) / vec2(textureSize(sam, 0));
+  uv = uv / texelSize - 0.5;
   vec2 iuv = floor(uv);
   vec2 f = fract(uv);
   f = f * f * (3.0 - 2.0 * f);
-  vec4 rg1 = textureLod(sam, (iuv + vec2(0.5, 0.5)) / scale, 0.0);
-  vec4 rg2 = textureLod(sam, (iuv + vec2(1.5, 0.5)) / scale, 0.0);
-  vec4 rg3 = textureLod(sam, (iuv + vec2(0.5, 1.5)) / scale, 0.0);
-  vec4 rg4 = textureLod(sam, (iuv + vec2(1.5, 1.5)) / scale, 0.0);
+  vec4 rg1 = textureLod(sam, (iuv + vec2(0.5, 0.5)) * texelSize, 0.0);
+  vec4 rg2 = textureLod(sam, (iuv + vec2(1.5, 0.5)) * texelSize, 0.0);
+  vec4 rg3 = textureLod(sam, (iuv + vec2(0.5, 1.5)) * texelSize, 0.0);
+  vec4 rg4 = textureLod(sam, (iuv + vec2(1.5, 1.5)) * texelSize, 0.0);
   return mix(mix(rg1, rg2, f.x), mix(rg3, rg4, f.x), f.y);
 }
 
@@ -67,12 +67,17 @@ float desaturate(vec3 col) {
   return dot(col, vec3(0.299, 0.587, 0.114));
 }
 
-// vec2 textureScale = vec2(2.0, 4.0);
-vec2 textureScale = vec2(1.0, 1.0);
+vec2 textureScale = vec2(2.0, 4.0);
+// vec2 textureScale = vec2(1.0, 1.0);
 
 vec3 getEnvColor(sampler2D envMap, vec3 normal, vec3 viewDir) {
   vec2 uv = normalToEnvUv(normal);
-  uv.y = 1.0 - uv.y;
+
+  uv.x += 0.2;
+  // uv.y += 0.1;
+
+  // uv *= 1.2;
+  // uv.y = 1.0 - uv.y;
 
   vec3 col = textureGaussian(envMap, uv * textureScale).rgb;
   vec3 desat = vec3(desaturate(col));

@@ -4,7 +4,7 @@
 uniform sampler2D uEnvMap;
 
 // Normal calculation function (using gradient):
-const vec3 GRADIENT_STEP = vec3(0.01, 0.0, 0.0);
+const vec3 GRADIENT_STEP = vec3(0.02, 0.0, 0.0);
 vec3 getNormal(vec3 p) {
   float gradientX =
     getSceneHit(p + GRADIENT_STEP.xyy) - getSceneHit(p - GRADIENT_STEP.xyy);
@@ -17,7 +17,7 @@ vec3 getNormal(vec3 p) {
 
 vec3 mainColor = vec3(0.1);
 
-vec3 lightDirection = normalize(vec3(0.0, 1.0, 1.0));
+vec3 lightDirection = normalize(vec3(1.0, 1.5, 1.0));
 
 vec3 getLight(vec3 p, vec3 reflectedNormal) {
   float lambert = dot(reflectedNormal, lightDirection);
@@ -26,7 +26,7 @@ vec3 getLight(vec3 p, vec3 reflectedNormal) {
   // float pl = clamp(1.7 + p.z, 0.0, 1.0);
   // lambert *= pl;
 
-  return vec3(lambert);
+  return vec3(lambert) * 2.0;
 }
 
 vec3 getSurface(vec3 p, vec3 rayDirection) {
@@ -37,7 +37,7 @@ vec3 getSurface(vec3 p, vec3 rayDirection) {
 
   vec3 light = getEnvColor(uEnvMap, reflectedNormal, viewDir);
 
-  // vec3 light = getLight(p, normal);
+  // light *= getLight(p, normal);
 
   // return reflectedNormal;
 
