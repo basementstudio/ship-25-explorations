@@ -64,7 +64,7 @@ void main() {
 
   vec3 viewDirection = normalize(wPos - cameraPosition);
 
-  RaymarchResult result = rayMarch(wPos, viewDirection, 10.0);
+  RaymarchResult result = rayMarch(wPos, viewDirection, 30.0);
   fragColor = result.color;
 
   // fragColor[1] = vec4(packRGB(depth), 1.0);

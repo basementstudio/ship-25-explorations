@@ -185,7 +185,7 @@ float getFlowHit(vec3 p) {
   flow *= 2.0;
   flow -= 1.0;
 
-  flow *= 0.1;
+  flow *= 0.05;
 
   // smoot out to edges
   float edge = smoothstep(0.0, flowEdge, uv.x);
@@ -201,10 +201,18 @@ float getFlowHit(vec3 p) {
 }
 
 float getOrbeHit(vec3 pIn) {
-  float orbeScale = 0.6;
-  vec3 p = (uPyramidMatrix * vec4(pIn, 1.0)).xyz / orbeScale;
+  vec3 p = (uPyramidMatrix * vec4(pIn, 1.0)).xyz;
   float flow = getFlowHit(p);
-  float hit = sdSphere(p, 0.3) - flow - 0.03;
+
+  float pyramidShift = -0.1;
+
+  p.y -= pyramidShift;
+
+  float pyramidScale = 0.5;
+
+  float hit = sdPyramid(p / pyramidScale, 1.0) * pyramidScale;
+
+  hit -= flow - 0.1;
 
   return hit;
 }

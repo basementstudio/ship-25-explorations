@@ -18,7 +18,8 @@ export function useMaterials(targets: SceneTargets, assets: Assets) {
     // FLOW MATERIAL (floor)
     const flowMaterial = createFlowMaterial(
       targets.flowFbo.read.texture,
-      flowSize
+      flowSize,
+      { EDGE_DAMPING: '' }
     )
 
     // FLOW MATERIAL (orbe)
