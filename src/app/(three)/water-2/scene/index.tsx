@@ -24,6 +24,7 @@ import { useTargets } from "./use-targets"
 import { LerpedMouse, useLerpMouse } from "./use-lerp-mouse"
 import { DoubleFBO } from "./use-double-fbo"
 import { useControls } from "leva"
+import { valueRemap } from "~/lib/utils/math"
 
 export function Scene() {
   const activeCamera = useThree((state) => state.camera)
@@ -45,24 +46,47 @@ export function Scene() {
   const [handlePointerMoveFloor, lerpMouseFloor, vRefsFloor] = useLerpMouse()
   const [handlePointerMoveOrbe, lerpMouseOrbe, vRefsOrbe] = useLerpMouse()
 
-  const debugGroup = useMemo(() => new THREE.Group(), [])
+  function gain(number: number, gain: number) {
+    const a = 0.5 * Math.pow(2.0 * (number < 0.5 ? number : 1.0 - number), gain)
+    return number < 0.5 ? a : 1.0 - a
+  }
 
   const orbePointerMove = useCallback(
     (e: ThreeEvent<PointerEvent>) => {
       const point = e.point.clone().sub(ORBE_WATER_CENTER)
 
-      const normal = point.normalize()
+      const maxPoint = 0.15
 
-      // Mercator projection for UV mapping
-      const longitude = Math.atan2(normal.x, normal.z)
-      const latitude = Math.asin(normal.y)
+      const gainConstant = 1 / 4
 
-      const uv = new THREE.Vector2(
-        0.5 + longitude / (2 * Math.PI),
-        0.5 - Math.log(Math.tan(Math.PI / 4 + latitude / 2)) / Math.PI
+      const p = new THREE.Vector2(
+        valueRemap(point.x, -maxPoint, maxPoint, 0, 1),
+        valueRemap(point.z, -maxPoint, maxPoint, 0, 1)
+      )
+      p.clamp(
+        { x: 0, y: 0 },
+        {
+          x: 1,
+          y: 1
+        }
       )
 
-      e.uv!.set(uv.x, uv.y)
+      p.set(gain(p.x, gainConstant), gain(p.y, gainConstant))
+
+      e.uv!.set(p.x, p.y)
+
+      // const normal = point.normalize()
+
+      // // Mercator projection for UV mapping
+      // const longitude = Math.atan2(normal.x, normal.z)
+      // const latitude = Math.asin(normal.y)
+
+      // const uv = new THREE.Vector2(
+      //   0.5 + longitude / (2 * Math.PI),
+      //   0.5 - Math.log(Math.tan(Math.PI / 4 + latitude / 2)) / Math.PI
+      // )
+
+      // e.uv!.set(uv.x, uv.y)
 
       // Pass UV to pointer move handler
       handlePointerMoveOrbe(e)
@@ -171,9 +195,9 @@ export function Scene() {
 
   const [{ debugFloor, debugOrbe, renderFloor, renderOrbe }] = useControls(
     () => ({
-      debugFloor: true,
+      debugFloor: false,
       renderFloor: true,
-      debugOrbe: true,
+      debugOrbe: false,
       renderOrbe: true
     })
   )

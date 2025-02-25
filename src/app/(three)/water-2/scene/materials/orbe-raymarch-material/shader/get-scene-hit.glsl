@@ -165,9 +165,9 @@ float getSpikesHit(vec3 pos, float flow) {
   return sinCos;
 }
 
-float flowEdge = 0.4;
+float flowEdge = 0.05;
 
-float getFlowHit(vec3 p) {
+float getFlowHit2(vec3 p) {
   vec3 normal = normalize(p);
   float longitude = atan(normal.x, normal.z);
   float latitude = asin(normal.y);
@@ -193,9 +193,30 @@ float getFlowHit(vec3 p) {
   edge *= smoothstep(1.0, 1.0 - flowEdge, uv.x);
   edge *= smoothstep(1.0, 1.0 - flowEdge, uv.y);
 
-  // flow *= edge;
+  return flow;
+}
 
-  // vec3 displacement = normal * flow;
+float maxPoint = 0.15;
+float gainConstant = 1.0 / 4.0;
+
+float getFlowHit(vec3 p) {
+  vec2 uv = vec2(
+    valueRemap(p.x, -maxPoint, maxPoint, 0.0, 1.0),
+    valueRemap(p.z, -maxPoint, maxPoint, 0.0, 1.0)
+  );
+  uv = clamp(uv, 0.0, 1.0);
+  uv = vec2(gain(uv.x, gainConstant), gain(uv.y, gainConstant));
+
+  float flow = texture(uFlowTexture, uv).x;
+  flow *= 2.0;
+  flow -= 1.0;
+
+  float edge = smoothstep(0.0, flowEdge, uv.x);
+  edge *= smoothstep(0.0, flowEdge, uv.y);
+  edge *= smoothstep(1.0, 1.0 - flowEdge, uv.x);
+  edge *= smoothstep(1.0, 1.0 - flowEdge, uv.y);
+
+  flow *= edge;
 
   return flow;
 }
@@ -205,14 +226,19 @@ float getOrbeHit(vec3 pIn) {
   float flow = getFlowHit(p);
 
   float pyramidShift = -0.1;
-
   p.y -= pyramidShift;
 
-  float pyramidScale = 0.5;
+  vec3 flowShift = vec3(p.x, 0.0, p.z);
+  flowShift *= 0.4;
+  flowShift *= flow;
+  p += flowShift;
+
+  float pyramidScale = 0.25;
 
   float hit = sdPyramid(p / pyramidScale, 1.0) * pyramidScale;
 
-  hit -= flow - 0.1;
+  // round
+  hit -= 0.01;
 
   return hit;
 }

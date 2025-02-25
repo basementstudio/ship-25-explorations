@@ -67,6 +67,8 @@ void main() {
   RaymarchResult result = rayMarch(wPos, viewDirection, 30.0);
   fragColor = result.color;
 
+  gl_FragDepth = getDepth(result.depth);
+
   // fragColor[1] = vec4(packRGB(depth), 1.0);
 
 }

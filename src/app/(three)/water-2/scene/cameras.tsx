@@ -1,8 +1,9 @@
 import { OrbitControls, useHelper } from "@react-three/drei"
 import { useThree } from "@react-three/fiber"
 import { useControls } from "leva"
-import { memo, useRef } from "react"
+import { memo, useEffect, useRef } from "react"
 import { CameraHelper, PerspectiveCamera } from "three"
+import { ORBE_WATER_CENTER } from "./constants"
 
 export const mainCamera = new PerspectiveCamera(
   75,
@@ -20,30 +21,33 @@ export const orbitCamera = new PerspectiveCamera(
 
 export const Cameras = memo(CamerasInner)
 
+const cameraMap = {
+  orbit: orbitCamera,
+  main: mainCamera
+}
+
 function CamerasInner() {
   const activeCamera = useThree((state) => state.camera)
   const set = useThree((state) => state.set)
 
-  useControls(() => ({
+  const [{ camera }] = useControls(() => ({
     camera: {
-      value: "orbit",
-      options: ["main", "orbit"],
-      onChange: (value) => {
-        if (value === "main") {
-          set({ camera: mainCamera })
-        } else {
-          set({ camera: orbitCamera })
-        }
-      },
-      transient: false
+      value: "main",
+      options: ["main", "orbit"]
     }
   }))
+
+  useEffect(() => {
+    const selectedCamera = cameraMap[camera as keyof typeof cameraMap]
+    set({ camera: selectedCamera })
+    selectedCamera.updateProjectionMatrix()
+  }, [camera])
 
   const mainCameraRef = useRef(mainCamera)
 
   useHelper(activeCamera === orbitCamera && mainCameraRef, CameraHelper)
 
-  mainCamera.lookAt(0, 0, 0)
+  mainCamera.lookAt(ORBE_WATER_CENTER)
 
   return (
     <>
@@ -54,7 +58,7 @@ function CamerasInner() {
         near={1}
         far={3}
       />
-      <primitive object={orbitCamera} position={[1.5, 1.5, 1.5]} />
+      <primitive object={orbitCamera} position={[0.7, 0.7, 0.7]} />
       <OrbitControls camera={orbitCamera} />
     </>
   )

@@ -48,6 +48,7 @@ RaymarchResult rayMarch(vec3 rayPosition, vec3 rayDirection, float maxDepth) {
     result = vec4(color, 1.0);
     distance = hit.distance;
   } else {
+    discard;
     distance = 1.0;
   }
 
