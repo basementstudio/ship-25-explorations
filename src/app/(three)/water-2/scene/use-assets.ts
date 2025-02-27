@@ -27,6 +27,9 @@ export function useAssets() {
 
   const noiseMap = useTexture("/textures/noise-LDR_RGBA_63.png")
 
+  noiseMap.wrapS = THREE.RepeatWrapping
+  noiseMap.wrapT = THREE.RepeatWrapping
+
   const assets = useMemo(() => {
     return {
       envMap,

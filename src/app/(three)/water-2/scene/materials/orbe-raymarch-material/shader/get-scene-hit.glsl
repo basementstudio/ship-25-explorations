@@ -16,8 +16,16 @@ uniform mat4 uPyramidMatrix;
 uniform float uFlowSize;
 // AVAILABLE: uniform float time;
 
+uniform mat4 uSphereMatrix;
+uniform float uSphereMix;
+
 float sdSphere(vec3 position, float radius) {
   return length(position) - radius;
+}
+
+float sdBox(vec3 p, vec3 b) {
+  vec3 q = abs(p) - b;
+  return length(max(q, 0.0)) + min(max(q.x, max(q.y, q.z)), 0.0);
 }
 
 float sdPlane(vec3 position) {
@@ -221,10 +229,7 @@ float getFlowHit(vec3 p) {
   return flow;
 }
 
-float getOrbeHit(vec3 pIn) {
-  vec3 p = (uPyramidMatrix * vec4(pIn, 1.0)).xyz;
-  float flow = getFlowHit(p);
-
+float getOrbeHit(vec3 p, float flow) {
   float pyramidShift = -0.1;
   p.y -= pyramidShift;
 
@@ -243,8 +248,30 @@ float getOrbeHit(vec3 pIn) {
   return hit;
 }
 
+float getOrbe2hit(vec3 pIn, float flow) {
+  vec3 p = (uSphereMatrix * vec4(pIn, 1.0)).xyz;
+
+  float noise = getNoise(p.xz).x;
+  noise *= getNoise(p.xy).x;
+
+  flow *= 1.0 - uSphereMix;
+
+  float hit = sdSphere(p, 0.25 - flow * 0.1 + noise * 0.05);
+
+  // return flow;
+  return hit;
+}
+
 float getSceneHit(vec3 p) {
-  float hit = getOrbeHit(p);
+  vec3 pPyramid = (uPyramidMatrix * vec4(p, 1.0)).xyz;
+  float flow = getFlowHit(pPyramid);
+
+  float hit1 = getOrbeHit(pPyramid, flow);
+
+  float hit2 = getOrbe2hit(p, flow);
+
+  float hit = mix(hit1, hit2, uSphereMix);
+
   return hit * 0.3;
 }
 

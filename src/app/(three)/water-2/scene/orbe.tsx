@@ -174,12 +174,18 @@ export function Orbe({
           transparent
         />
       </mesh>
-      <OrbeSphere isVisible={debugOrbe} />
+      <OrbeSphere isVisible={debugOrbe} materials={materials} />
     </>
   )
 }
 
-function OrbeSphere({ isVisible }: { isVisible: boolean }) {
+function OrbeSphere({
+  isVisible,
+  materials
+}: {
+  isVisible: boolean
+  materials: SceneMaterials
+}) {
   const [handlePointerMoveSphere, lerpMouseSphere, vRefsSphere] = useLerpMouse({
     lerpSpeed: 3
   })
@@ -189,20 +195,30 @@ function OrbeSphere({ isVisible }: { isVisible: boolean }) {
     sphereCenter: new THREE.Vector3(),
     prevDirection: new THREE.Vector3(),
     currentDirection: new THREE.Vector3(),
-    rotationAxis: new THREE.Vector3()
+    rotationAxis: new THREE.Vector3(),
+    rotationMomentum: new THREE.Vector3(), // Store rotation momentum
+    isInteracting: false,
+    lastInteractionTime: 0,
+    momentumScale: 3 // Much higher value for faster spinning
   }).current
 
   const sphereRef = useRef<THREE.Mesh>(null)
 
-  useFrame((_, delta) => {
+  useFrame((state, delta) => {
     const sphere = sphereRef.current
     if (!sphere) return
 
     // Get sphere center in world space
     refs.sphereCenter.copy(ORBE_WATER_CENTER)
 
-    // Only rotate if there's significant movement
-    if (vRefsSphere.pointSpeed.lengthSq() > 0.00001) {
+    // Check if currently interacting (based on movement)
+    const hasSignificantMovement = vRefsSphere.pointSpeed.lengthSq() > 0.00001
+    refs.isInteracting = hasSignificantMovement
+
+    if (hasSignificantMovement) {
+      // Update last interaction time
+      refs.lastInteractionTime = state.clock.elapsedTime
+
       // Calculate direction vectors from sphere center to contact points
       refs.prevDirection
         .copy(vRefsSphere.prevPoint)
@@ -229,11 +245,63 @@ function OrbeSphere({ isVisible }: { isVisible: boolean }) {
         !isNaN(angle) &&
         angle > 0.001
       ) {
-        sphere.rotateOnWorldAxis(refs.rotationAxis, angle)
+        // Add to current momentum instead of replacing it
+        const momentumContribution = new THREE.Vector3()
+          .copy(refs.rotationAxis)
+          .multiplyScalar(angle * refs.momentumScale) // Using the higher momentumScale
+
+        // Add to existing momentum (with less damping to maintain more speed)
+        refs.rotationMomentum.multiplyScalar(0.98) // Higher value = less damping
+        refs.rotationMomentum.add(momentumContribution)
+
+        // Limit maximum momentum magnitude to prevent excessive spinning
+        const maxMomentum = 10.0 // Higher max momentum
+        if (refs.rotationMomentum.length() > maxMomentum) {
+          refs.rotationMomentum.normalize().multiplyScalar(maxMomentum)
+        }
+
+        // Apply rotation based on current input plus accumulated momentum
+        const totalRotationAxis = new THREE.Vector3()
+          .copy(refs.rotationMomentum)
+          .normalize()
+        const totalRotationAngle = refs.rotationMomentum.length() * delta
+
+        sphere.rotateOnWorldAxis(totalRotationAxis, totalRotationAngle)
+      }
+    } else {
+      // Apply easing with momentum
+      const timeSinceInteraction =
+        state.clock.elapsedTime - refs.lastInteractionTime
+
+      // Only apply momentum if it's significant
+      if (refs.rotationMomentum.lengthSq() > 0.0001) {
+        // Extract axis and magnitude from momentum
+        const momentumMagnitude = refs.rotationMomentum.length()
+        const momentumAxis = refs.rotationAxis
+          .copy(refs.rotationMomentum)
+          .normalize()
+
+        // Calculate decay factor (using a smaller multiplier for slower decay)
+        const decayFactor = Math.max(0, 1 - timeSinceInteraction * 0.5) // Reduced from 1.5 to 0.5
+
+        // Apply decayed rotation
+        const decayedAngle = momentumMagnitude * decayFactor * delta
+        if (decayedAngle > 0.0001) {
+          sphere.rotateOnWorldAxis(momentumAxis, decayedAngle)
+        }
+
+        // Reduce momentum more slowly over time
+        refs.rotationMomentum.multiplyScalar(0.99) // Increased from 0.95 to 0.99
       }
     }
 
     lerpMouseSphere(delta)
+
+    sphereRef.current.updateMatrixWorld()
+
+    materials.orbeRaymarchMaterial.uniforms.uSphereMatrix.value
+      .copy(sphereRef.current.matrixWorld)
+      .invert()
   })
 
   return (
@@ -245,6 +313,7 @@ function OrbeSphere({ isVisible }: { isVisible: boolean }) {
       onPointerOver={() => (vRefsSphere.shouldReset = true)}
     >
       <sphereGeometry args={[0.25, 16, 16]} />
+      {/* <boxGeometry args={[0.5, 0.5, 0.5, 1, 1, 1]} /> */}
       <meshBasicMaterial wireframe color={"red"} />
     </mesh>
   )
