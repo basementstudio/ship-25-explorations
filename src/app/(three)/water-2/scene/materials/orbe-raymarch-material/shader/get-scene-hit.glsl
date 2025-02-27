@@ -251,12 +251,14 @@ float getOrbeHit(vec3 p, float flow) {
 float getOrbe2hit(vec3 pIn, float flow) {
   vec3 p = (uSphereMatrix * vec4(pIn, 1.0)).xyz;
 
-  float noise = getNoise(p.xz).x;
-  noise *= getNoise(p.xy).x;
+  float noise = getNoise(p.xz * 0.3).x;
+  noise = max(noise, getNoise(p.xy * 0.3).x);
 
-  flow *= 1.0 - uSphereMix;
+  flow *= valueRemap(uSphereMix, 0.0, 1.0, 1.0, 1.0);
 
-  float hit = sdSphere(p, 0.25 - flow * 0.1 + noise * 0.05);
+  float n = noise * 0.05 + flow * 0.05;
+
+  float hit = sdSphere(p, 0.25 + n);
 
   // return flow;
   return hit;

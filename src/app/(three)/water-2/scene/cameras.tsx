@@ -3,6 +3,7 @@ import { useThree } from "@react-three/fiber"
 import { useControls } from "leva"
 import { memo, useEffect, useRef } from "react"
 import { CameraHelper, PerspectiveCamera } from "three"
+
 import { ORBE_WATER_CENTER } from "./constants"
 
 export const mainCamera = new PerspectiveCamera(75, 1, 1, 100)
@@ -22,7 +23,7 @@ function CamerasInner() {
 
   const [{ camera }] = useControls(() => ({
     camera: {
-      value: "orbit",
+      value: "main",
       options: ["main", "orbit"]
     }
   }))

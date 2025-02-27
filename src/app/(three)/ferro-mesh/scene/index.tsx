@@ -9,7 +9,6 @@ import { clamp, lerp, valueRemap } from "~/lib/utils/math"
 
 import { Cameras } from "./cameras"
 import { FLOW_SIM_SIZE } from "./constants"
-import { RAYMARCH_FLOW_SIZE } from "./constants"
 import { DebugTextures } from "./debug-textures"
 import { useAssets } from "./use-assets"
 import { DoubleFBO } from "./use-double-fbo"

@@ -3,7 +3,8 @@ import { useControls } from "leva"
 import { MutableRefObject, useCallback, useMemo, useRef } from "react"
 import * as THREE from "three"
 
-import { valueRemap } from "~/lib/utils/math"
+import { clamp } from "~/lib/utils/math"
+import { lerp, valueRemap } from "~/lib/utils/math"
 
 import { ORBE_WATER_CENTER } from "./constants"
 import { renderFlow } from "./render-flow"
@@ -35,7 +36,7 @@ export function Orbe({
   const orbeFlowScene = useMemo(() => new THREE.Scene(), [])
 
   const [{ debugOrbe, renderOrbe }] = useControls(() => ({
-    debugOrbe: true,
+    debugOrbe: false,
     renderOrbe: true
   }))
 
@@ -199,8 +200,11 @@ function OrbeSphere({
     rotationMomentum: new THREE.Vector3(), // Store rotation momentum
     isInteracting: false,
     lastInteractionTime: 0,
-    momentumScale: 3 // Much higher value for faster spinning
+    momentumScale: 0.7, // Much higher value for faster spinning
+    addedMomentum: 0
   }).current
+
+  const maxMomentum = 2
 
   const sphereRef = useRef<THREE.Mesh>(null)
 
@@ -255,7 +259,6 @@ function OrbeSphere({
         refs.rotationMomentum.add(momentumContribution)
 
         // Limit maximum momentum magnitude to prevent excessive spinning
-        const maxMomentum = 10.0 // Higher max momentum
         if (refs.rotationMomentum.length() > maxMomentum) {
           refs.rotationMomentum.normalize().multiplyScalar(maxMomentum)
         }
@@ -294,6 +297,18 @@ function OrbeSphere({
         refs.rotationMomentum.multiplyScalar(0.99) // Increased from 0.95 to 0.99
       }
     }
+
+    const currentM = refs.rotationMomentum.length()
+
+    refs.addedMomentum = lerp(refs.addedMomentum, currentM, delta * 5)
+
+    materials.orbeRaymarchMaterial.uniforms.uSphereMix.value = clamp(
+      0,
+      1,
+      refs.addedMomentum / maxMomentum
+    )
+
+    // materials.orbeRaymarchMaterial.uniforms.uSphereMix.value = 1
 
     lerpMouseSphere(delta)
 
