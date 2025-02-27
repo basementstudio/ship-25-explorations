@@ -10,11 +10,14 @@ export function createFerroMeshMaterial() {
     vertexShader,
     fragmentShader,
     // wireframe: true,
+    transparent: true,
     uniforms: {
       uTime: { value: Math.PI },
       uDiskRadius: { value: 1 },
       uHeightMax: { value: 0.4 },
-      uHeightMin: { value: 0.15 }
+      uHeightMin: { value: 0.15 },
+      uMainPyramidRadius: { value: 0.6 },
+      uMainPyramidHeight: { value: 0.5 }
     }
   })
 }

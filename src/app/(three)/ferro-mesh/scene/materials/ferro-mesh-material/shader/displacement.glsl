@@ -4,12 +4,46 @@
 
 #pragma glslify: getVogel = require(../../glsl-shared/get-vogel.glsl)
 #pragma glslify: valueRemap = require(../../glsl-shared/value-remap.glsl)
+#pragma glslify: snoise2 = require('glsl-noise/classic/2d')
+
+vec4 textureGood(sampler2D sam, vec2 uv) {
+  vec2 texelSize = vec2(1.0) / vec2(textureSize(sam, 0));
+  uv = uv / texelSize - 0.5;
+  vec2 iuv = floor(uv);
+  vec2 f = fract(uv);
+  f = f * f * (3.0 - 2.0 * f);
+  vec4 rg1 = textureLod(sam, (iuv + vec2(0.5, 0.5)) * texelSize, 0.0);
+  vec4 rg2 = textureLod(sam, (iuv + vec2(1.5, 0.5)) * texelSize, 0.0);
+  vec4 rg3 = textureLod(sam, (iuv + vec2(0.5, 1.5)) * texelSize, 0.0);
+  vec4 rg4 = textureLod(sam, (iuv + vec2(1.5, 1.5)) * texelSize, 0.0);
+  return mix(mix(rg1, rg2, f.x), mix(rg3, rg4, f.x), f.y);
+}
 
 uniform float uDiskRadius;
 uniform float uHeightMax;
 uniform float uHeightMin;
+uniform sampler2D uNoiseTexture;
+uniform float uTime;
 
-vec3 pyramid(
+uniform float uMainPyramidRadius;
+uniform float uMainPyramidHeight;
+
+float opSmoothUnion(float d1, float d2, float k) {
+  float h = clamp(0.5 + 0.5 * (d2 - d1) / k, 0.0, 1.0);
+  return mix(d2, d1, h) - k * h * (1.0 - h);
+}
+
+float opSmoothSubtraction(float d1, float d2, float k) {
+  float h = clamp(0.5 - 0.5 * (d2 + d1) / k, 0.0, 1.0);
+  return mix(d2, -d1, h) + k * h * (1.0 - h);
+}
+
+float opSmoothIntersection(float d1, float d2, float k) {
+  float h = clamp(0.5 - 0.5 * (d2 - d1) / k, 0.0, 1.0);
+  return mix(d2, d1, h) + k * h * (1.0 - h);
+}
+
+float getPyrmidDistance(
   vec3 p,
   vec3 pyramidCenter,
   float pyramidRadius,
@@ -18,22 +52,60 @@ vec3 pyramid(
   float d = length(vec3(p.x, 0.0, p.z) - pyramidCenter) / pyramidRadius;
 
   d = clamp(d, 0.0, 1.0);
+
+  return d;
+}
+
+vec3 pyramid(
+  vec3 p,
+  vec3 pyramidCenter,
+  float pyramidRadius,
+  float pyramidHeight
+) {
+  float d = getPyrmidDistance(p, pyramidCenter, pyramidRadius, pyramidHeight);
+
   d = smoothstep(0.0, 1.0, d);
-  // d = pow(d, 0.7);
+  d = pow(d, 0.5);
   d = 1.0 - d;
   d = d * pyramidHeight;
 
-  p.y = max(p.y, d);
+  p.y = opSmoothIntersection(p.y, d, 0.04);
 
   return p;
+}
+
+vec3 mainPyramid(
+  vec3 p,
+  vec3 pyramidCenter,
+  float pyramidRadius,
+  float pyramidHeight
+) {
+  float d = getPyrmidDistance(p, pyramidCenter, pyramidRadius, pyramidHeight);
+
+  d = 1.0 - d;
+  d = pow(d, 6.0);
+  d = smoothstep(0.0, 1.0, d);
+
+  // d = pow(d, 0.5);
+
+  d = d * pyramidHeight;
+
+  p.y = opSmoothIntersection(p.y, d, 0.1);
+  return p;
+}
+
+// noise functions
+vec3 getNoise(vec2 uv) {
+  vec3 noise = textureGood(uNoiseTexture, uv).xyz;
+  return noise;
 }
 
 const int numPyramids = 30;
 
 vec3 displacement(vec3 p) {
-  p = pyramid(p, vec3(0.0), 0.4, 0.5);
+  p = mainPyramid(p, vec3(0.0), uMainPyramidRadius, uMainPyramidHeight);
 
-  for (int i = 1; i < numPyramids; i++) {
+  for (int i = 2; i < numPyramids; i++) {
     vec2 vogel = getVogel(1.0, float(i), float(numPyramids), 0.0);
 
     float d = length(vogel);
@@ -46,6 +118,9 @@ vec3 displacement(vec3 p) {
 
     p = pyramid(p, center, size, size);
   }
+
+  // add noise
+  p.y += snoise2(p.xz * 10.0 + vec2(0.0, -uTime)) * 0.005;
 
   return p;
 }

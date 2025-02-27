@@ -4,8 +4,6 @@ import { useControls } from "leva"
 import { memo, useEffect, useRef } from "react"
 import { CameraHelper, PerspectiveCamera } from "three"
 
-import { ORBE_WATER_CENTER } from "./constants"
-
 export const mainCamera = new PerspectiveCamera(75, 1, 1, 100)
 
 export const orbitCamera = new PerspectiveCamera(75, 1, 1, 100)
@@ -23,13 +21,13 @@ function CamerasInner() {
 
   const [{ camera }] = useControls(() => ({
     camera: {
-      value: "orbit",
+      value: "main",
       options: ["main", "orbit"]
     }
   }))
 
   useEffect(() => {
-    mainCamera.lookAt(0, 0, 0)
+    mainCamera.lookAt(0, 0.2, 0)
     const selectedCamera = cameraMap[camera as keyof typeof cameraMap]
     set({ camera: selectedCamera })
     selectedCamera.updateProjectionMatrix()
@@ -45,8 +43,8 @@ function CamerasInner() {
     <>
       <primitive
         object={mainCamera}
-        position={[0, 1.3, 2.5]}
-        fov={30}
+        position={[0, 0.2, 2]}
+        fov={35}
         near={0.1}
         far={5}
         aspect={size.width / size.height}

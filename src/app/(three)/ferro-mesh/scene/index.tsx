@@ -1,6 +1,11 @@
 "use client"
 
-import { createPortal, useFrame, useThree } from "@react-three/fiber"
+import {
+  createPortal,
+  ThreeEvent,
+  useFrame,
+  useThree
+} from "@react-three/fiber"
 import { useControls } from "leva"
 import { useCallback, useEffect, useMemo, useRef } from "react"
 import * as THREE from "three"
@@ -103,9 +108,19 @@ export function Scene() {
   )
 
   const vActive = useRef(0)
+  const vActiveFast = useRef(0)
+
+  const getActive = () => {
+    let a = vRefsFloor.point.distanceTo(new THREE.Vector3(0, 0, 0))
+    a -= 0.2
+    a = clamp(0, 1, a)
+    return a
+  }
 
   // Update flow simulation
   useFrame(({ gl, scene, clock }, delta) => {
+    gl.setClearColor("#111")
+
     const shouldDoubleRender = delta > 1 / 75
 
     // floor
@@ -134,26 +149,24 @@ export function Scene() {
       )
     }
 
-    vActive.current = lerp(
-      vActive.current,
-      clamp(0, 1, vRefsFloor.uv.distanceTo(new THREE.Vector2(0.5, 0.5)) * 5),
-      5 * delta
-    )
+    vActive.current = lerp(vActive.current, getActive(), 2 * delta)
+
+    vActiveFast.current = lerp(vActiveFast.current, getActive(), 6 * delta)
 
     ferroMeshMaterial.uniforms.uDiskRadius.value = valueRemap(
       vActive.current,
       0,
       1,
-      0.7,
-      2
+      0.4,
+      1
     )
 
     ferroMeshMaterial.uniforms.uHeightMax.value = valueRemap(
       vActive.current,
       0,
       1,
-      0.4,
-      0.15
+      0.3,
+      0.05
     )
 
     ferroMeshMaterial.uniforms.uHeightMin.value = valueRemap(
@@ -163,6 +176,24 @@ export function Scene() {
       0.15,
       0
     )
+
+    ferroMeshMaterial.uniforms.uMainPyramidRadius.value = valueRemap(
+      vActiveFast.current,
+      0,
+      1,
+      1.2,
+      1
+    )
+
+    ferroMeshMaterial.uniforms.uMainPyramidHeight.value = valueRemap(
+      vActiveFast.current,
+      0,
+      1,
+      0.6,
+      0.3
+    )
+
+    ferroMeshMaterial.uniforms.uTime.value = clock.getElapsedTime()
 
     raymarchMaterial.uniforms.uFlowSize.value = FLOW_SIM_SIZE / 2
 
@@ -187,8 +218,22 @@ export function Scene() {
         visible={debugFloor}
         rotation={[Math.PI / -2, 0, 0]}
         position={[0, 0, 0]}
-        onPointerMove={handlePointerMoveFloor}
-        onPointerOver={() => (vRefsFloor.shouldReset = true)}
+        onPointerMove={(e: ThreeEvent<PointerEvent>) => {
+          e.stopPropagation()
+          handlePointerMoveFloor(e)
+        }}
+      >
+        <planeGeometry args={[FLOW_SIM_SIZE, FLOW_SIM_SIZE]} />
+        <meshBasicMaterial map={flowFbo.read.texture} />
+      </mesh>
+      <mesh
+        visible={debugFloor}
+        rotation={[0, 0, 0]}
+        position={[0, 0, 0]}
+        onPointerMove={(e: ThreeEvent<PointerEvent>) => {
+          e.stopPropagation()
+          handlePointerMoveFloor(e)
+        }}
       >
         <planeGeometry args={[FLOW_SIM_SIZE, FLOW_SIM_SIZE]} />
         <meshBasicMaterial map={flowFbo.read.texture} />
@@ -199,7 +244,7 @@ export function Scene() {
         position={[0, 0, 0]}
         scale={[2, 2, 2]}
       >
-        <planeGeometry args={[2, 2, 200, 200]} />
+        <planeGeometry args={[2, 2, 300, 300]} />
         <primitive object={ferroMeshMaterial} />
       </mesh>
 

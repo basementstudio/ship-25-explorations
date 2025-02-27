@@ -45,7 +45,7 @@ vec3 initialRemap(vec3 p) {
   return p;
 }
 
-#pragma glslify: displacement = require('./displacement.glsl')
+#pragma glslify: displacement = require('./displacement.glsl', texture = texture, textureSize = textureSize, textureLod = textureLod)
 
 vec3 calculateNormal(vec3 displaced, vec3 pOrigin) {
   // Define a small step size

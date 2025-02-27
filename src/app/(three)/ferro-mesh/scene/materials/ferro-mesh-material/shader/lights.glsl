@@ -1,3 +1,8 @@
+uniform sampler2D uEnvMap;
+uniform sampler2D uEnvMap2;
+
+#pragma glslify: valueRemap = require('../../glsl-shared/value-remap.glsl')
+
 vec2 normalToEnvUv(vec3 normal) {
   // Normalize the vector (ensure it's unit length)
   vec3 n = normalize(normal);
@@ -56,40 +61,62 @@ vec4 textureGaussian(sampler2D sam, vec2 uv) {
 }
 
 float getFresnel(vec3 normal, vec3 viewDir) {
-  float cosTheta = dot(normal, viewDir);
-  // float f0 = 0.04;
-  // float f90 = 1.0;
-  // return f0 + (f90 - f0) * pow(1.0 - cosTheta, 5.0);
-  return cosTheta;
+  // fresnel
+  float ft = dot(normal, normalize(vec3(0.0, 0.0, 1.0)));
+  float fresnelValue = smoothstep(0.6, 1.0, min(1.0, pow(1.0 - ft, 2.0)));
+  return fresnelValue;
 }
 
 float desaturate(vec3 col) {
   return dot(col, vec3(0.299, 0.587, 0.114));
 }
 
-vec2 textureScale = vec2(4.0, 2.0);
-
-vec3 getEnvColor(sampler2D envMap, vec3 normal, vec3 viewDir) {
+vec3 getEnv2(vec3 normal) {
   vec2 uv = normalToEnvUv(normal);
-
-  uv.x += 0.2;
-  // uv.y += 0.1;
-
-  // uv *= 1.2;
-  // uv.y = 1.0 - uv.y;
-
-  vec3 col = textureGaussian(envMap, uv * textureScale).rgb;
-  vec3 desat = vec3(desaturate(col));
-
-  float fresnel = getFresnel(normal, -viewDir);
-  fresnel *= 2.0;
-  fresnel = clamp(fresnel, 0.0, 1.0);
-  fresnel = pow(fresnel, 2.0);
-  col = mix(col, desat, fresnel);
-  // col = pow(col, vec3(4.0));
-
-  // return vec3(fresnel);
-  return col;
+  uv.y = 1.0 - uv.y;
+  return textureGood(uEnvMap2, uv).rgb;
 }
 
-#pragma glslify: export(getEnvColor)
+vec2 textureScale = vec2(1.0, 1.0);
+
+vec3 ambientLightDir = normalize(vec3(0.0, 0.7, 1.0));
+float ambientLightIntensity = 0.4;
+
+vec4 getLights(vec3 normal, vec3 viewDir) {
+  vec2 uv = normalToEnvUv(normal);
+
+  vec3 reflectedNormal = reflect(viewDir, normal);
+
+  vec3 col = vec3(0.0);
+
+  float lightAmbient = dot(normal, ambientLightDir) * ambientLightIntensity;
+  lightAmbient = clamp(lightAmbient, 0.0, 1.0);
+
+  col += lightAmbient;
+
+  vec3 env = getEnv2(reflectedNormal);
+  // env *= pow(clamp(1.0 - dot(normal, vec3(0.0, 1.0, 0.0)), 0.0, 1.0), 0.2);
+  env *= smoothstep(1.0, 0.9, dot(normal, vec3(0.0, 1.0, 0.0)));
+  col += env;
+
+  float fresnel = getFresnel(normal, viewDir);
+
+  // fade out
+  float alpha = 1.0;
+
+  float alphaMultiplier = clamp(
+    1.0 - pow(abs(worldPosition.z), 1.0) * 0.6,
+    0.0,
+    1.0
+  );
+
+  if (worldPosition.z > 0.0) {
+    col *= alphaMultiplier;
+  } else {
+    alpha *= alphaMultiplier;
+  }
+
+  return vec4(col, alpha);
+}
+
+#pragma glslify: export(getLights)

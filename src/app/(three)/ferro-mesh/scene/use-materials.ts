@@ -18,7 +18,9 @@ export function useMaterials(targets: SceneTargets, assets: Assets) {
   const materials = useMemo(() => {
     // FERRO MESH MATERIAL
     const ferroMeshMaterial = createFerroMeshMaterial()
-
+    ferroMeshMaterial.uniforms.uEnvMap = { value: assets.envMap }
+    ferroMeshMaterial.uniforms.uEnvMap2 = { value: assets.envMap2 }
+    ferroMeshMaterial.uniforms.uNoiseTexture = { value: assets.noiseMap }
     // FLOW MATERIAL (floor)
     const flowMaterial = createFlowMaterial(
       targets.flowFbo.read.texture,

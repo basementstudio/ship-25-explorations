@@ -200,11 +200,11 @@ function OrbeSphere({
     rotationMomentum: new THREE.Vector3(), // Store rotation momentum
     isInteracting: false,
     lastInteractionTime: 0,
-    momentumScale: 0.7, // Much higher value for faster spinning
+    momentumScale: 1.2, // Much higher value for faster spinning
     addedMomentum: 0
   }).current
 
-  const maxMomentum = 2
+  const maxMomentum = 3.5
 
   const sphereRef = useRef<THREE.Mesh>(null)
 
