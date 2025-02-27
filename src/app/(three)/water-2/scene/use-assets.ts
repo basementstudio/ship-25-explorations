@@ -10,10 +10,13 @@ interface SphereGLTFResult extends GLTF {
   }
 }
 
-export function useAssets() {
+export type SceneAssets = ReturnType<typeof useAssets>
 
-  const { nodes } = useGLTF("/models/triangle-este-si.glb") as any as SphereGLTFResult
-  const pyramid = nodes['Cube'] as THREE.Mesh
+export function useAssets() {
+  const { nodes } = useGLTF(
+    "/models/triangle-este-si.glb"
+  ) as any as SphereGLTFResult
+  const pyramid = nodes["Cube"] as THREE.Mesh
 
   const envMap = useTexture("/textures/hdri4.png")
 

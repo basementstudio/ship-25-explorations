@@ -2,13 +2,14 @@ import { useThree } from "@react-three/fiber"
 import { useMemo } from "react"
 import { Matrix4, PerspectiveCamera, Vector2, Vector3 } from "three"
 
+import { FLOW_SIM_SIZE } from "./constants"
 import { createFlowMaterial } from "./materials/flow-material"
 import { createFlowNormalMaterial } from "./materials/flow-normal-material"
 import { getMapDebugProgram } from "./materials/map-debug-program"
+import { createOrbeRaymarchMaterial } from "./materials/orbe-raymarch-material"
 import { getRaymarchProgram } from "./materials/raymarch-program"
 import type { Assets } from "./use-assets"
 import { flowSize, SceneTargets } from "./use-targets"
-import { createOrbeRaymarchMaterial } from "./materials/orbe-raymarch-material"
 
 export type SceneMaterials = ReturnType<typeof useMaterials>
 
@@ -19,7 +20,7 @@ export function useMaterials(targets: SceneTargets, assets: Assets) {
     const flowMaterial = createFlowMaterial(
       targets.flowFbo.read.texture,
       flowSize,
-      { EDGE_DAMPING: '' }
+      { EDGE_DAMPING: "" }
     )
 
     // FLOW MATERIAL (orbe)
@@ -37,7 +38,6 @@ export function useMaterials(targets: SceneTargets, assets: Assets) {
 
     // WATER FLOOR MATERIAL
     const raymarchMaterial = getRaymarchProgram()
-    raymarchMaterial.uniforms.uFlowSize = { value: 0.001 }
     raymarchMaterial.uniforms.time = { value: 0.0 }
     raymarchMaterial.uniforms.uNear = { value: 0.1 }
     raymarchMaterial.uniforms.uFar = { value: 10 }
@@ -54,8 +54,9 @@ export function useMaterials(targets: SceneTargets, assets: Assets) {
     }
     raymarchMaterial.uniforms.pyramidReveal = { value: 0.0 }
     raymarchMaterial.uniforms.mouseSpeed = { value: 0.0 }
-    raymarchMaterial.uniforms.uNoiseTexture = { value: assets.noiseMap },
-      raymarchMaterial.uniforms.uEnvMap = { value: assets.envMap }
+    raymarchMaterial.uniforms.uNoiseTexture = { value: assets.noiseMap }
+    raymarchMaterial.uniforms.uEnvMap = { value: assets.envMap }
+    raymarchMaterial.uniforms.uFlowSize = { value: FLOW_SIM_SIZE / 2 }
 
     // ORBE material
     const orbeRaymarchMaterial = createOrbeRaymarchMaterial()
@@ -97,7 +98,6 @@ export function useMaterials(targets: SceneTargets, assets: Assets) {
       )
       orbeRaymarchMaterial.uniforms.uNear.value = camera.near
       orbeRaymarchMaterial.uniforms.uFar.value = camera.far
-
     }
 
     return {
