@@ -1,12 +1,15 @@
-import { useMemo } from "react"
-import * as THREE from "three"
-
 import { ThreeEvent } from "@react-three/fiber"
+import { useMemo } from "react"
 import { useCallback } from "react"
+import * as THREE from "three"
 
 export type LerpedMouse = ReturnType<typeof useLerpMouse>[2]
 
-export function useLerpMouse() {
+interface LerpMouseParams {
+  lerpSpeed?: number
+}
+
+export function useLerpMouse({ lerpSpeed = 1 }: LerpMouseParams = {}) {
   const vRefs = useMemo(
     () => ({
       uv: new THREE.Vector2(),
@@ -37,19 +40,12 @@ export function useLerpMouse() {
 
       vRefs.prevSmoothUv.copy(vRefs.smoothUv)
 
-      const l = Math.min(delta * 10, 1)
+      const l = Math.min(delta * 10 * lerpSpeed, 1)
       vRefs.smoothUv.lerp(vRefs.uv, l)
-      vRefs.velocity.subVectors(
-        vRefs.smoothUv,
-        vRefs.prevSmoothUv
-      )
+      vRefs.velocity.subVectors(vRefs.smoothUv, vRefs.prevSmoothUv)
     },
     [vRefs]
   )
 
-  return [
-    handlePointerMove,
-    lerpMouseFloor,
-    vRefs
-  ] as const
+  return [handlePointerMove, lerpMouseFloor, vRefs] as const
 }

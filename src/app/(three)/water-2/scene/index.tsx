@@ -1,14 +1,16 @@
 "use client"
 
-import { useFBO } from "@react-three/drei"
 import {
   createPortal,
   ThreeEvent,
   useFrame,
   useThree
 } from "@react-three/fiber"
+import { useControls } from "leva"
 import { useCallback, useEffect, useMemo, useRef } from "react"
 import * as THREE from "three"
+
+import { valueRemap } from "~/lib/utils/math"
 
 import { Cameras } from "./cameras"
 import {
@@ -19,12 +21,10 @@ import {
 import { RAYMARCH_FLOW_SIZE } from "./constants"
 import { DebugTextures } from "./debug-textures"
 import { useAssets } from "./use-assets"
+import { DoubleFBO } from "./use-double-fbo"
+import { LerpedMouse, useLerpMouse } from "./use-lerp-mouse"
 import { useMaterials } from "./use-materials"
 import { useTargets } from "./use-targets"
-import { LerpedMouse, useLerpMouse } from "./use-lerp-mouse"
-import { DoubleFBO } from "./use-double-fbo"
-import { useControls } from "leva"
-import { valueRemap } from "~/lib/utils/math"
 
 export function Scene() {
   const activeCamera = useThree((state) => state.camera)
@@ -53,7 +53,9 @@ export function Scene() {
   updateFlowCamera(activeCamera as THREE.PerspectiveCamera)
 
   const [handlePointerMoveFloor, lerpMouseFloor, vRefsFloor] = useLerpMouse()
-  const [handlePointerMoveOrbe, lerpMouseOrbe, vRefsOrbe] = useLerpMouse()
+  const [handlePointerMoveOrbe, lerpMouseOrbe, vRefsOrbe] = useLerpMouse({
+    lerpSpeed: 3
+  })
 
   function gain(number: number, gain: number) {
     const a = 0.5 * Math.pow(2.0 * (number < 0.5 ? number : 1.0 - number), gain)
@@ -277,11 +279,11 @@ export function Scene() {
       {/* Pointer events (orbe) */}
       <mesh
         visible={debugOrbe}
-        scale={[0.27, 0.4, 0.27]}
+        scale={[0.26, 0.32, 0.26]}
         rotation={[0, 0, 0]}
         position={[
           ORBE_WATER_CENTER.x,
-          ORBE_WATER_CENTER.y - 0.12,
+          ORBE_WATER_CENTER.y - 0.1,
           ORBE_WATER_CENTER.z
         ]}
         onPointerMove={orbePointerMove}
@@ -311,7 +313,7 @@ export function Scene() {
       {/* Raymarched water (orbe) */}
       <mesh visible={renderOrbe} position={ORBE_WATER_CENTER as any}>
         <group position={[0, 0, 0]} ref={orbeContainerRef as any} />
-        <boxGeometry args={[1, 1, 1, 5, 5, 5]} />
+        <boxGeometry args={[0.8, 0.8, 0.8, 1, 1, 1]} />
         <primitive object={orbeRaymarchMaterial} />
       </mesh>
 
@@ -320,13 +322,18 @@ export function Scene() {
         visible={debugOrbe}
         position={ORBE_WATER_CENTER as any}
       >
-        <boxGeometry args={[1, 1, 1, 1, 1, 1]} />
+        <boxGeometry args={[0.8, 0.8, 0.8, 1, 1, 1]} />
         <meshBasicMaterial
           wireframe
           color={"red"}
           depthTest={false}
           transparent
         />
+      </mesh>
+
+      <mesh visible={debugOrbe} position={ORBE_WATER_CENTER as any}>
+        <sphereGeometry args={[0.25, 16, 16]} />
+        <meshBasicMaterial wireframe color={"red"} />
       </mesh>
 
       <Cameras />

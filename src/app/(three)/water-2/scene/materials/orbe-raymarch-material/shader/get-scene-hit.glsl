@@ -235,10 +235,10 @@ float getOrbeHit(vec3 pIn) {
 
   float pyramidScale = 0.5;
 
-  float hit = sdPyramid(p / pyramidScale, 1.0) * pyramidScale;
+  float hit = sdPyramid(p / pyramidScale, 0.9) * pyramidScale;
 
   // round
-  hit -= 0.01;
+  hit -= 0.001;
 
   return hit;
 }
