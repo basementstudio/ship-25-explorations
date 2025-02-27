@@ -5,7 +5,7 @@ import { useControls } from "leva"
 import { useCallback, useEffect, useMemo, useRef } from "react"
 import * as THREE from "three"
 
-import { valueRemap } from "~/lib/utils/math"
+import { clamp, lerp, valueRemap } from "~/lib/utils/math"
 
 import { Cameras } from "./cameras"
 import { FLOW_SIM_SIZE } from "./constants"
@@ -103,6 +103,8 @@ export function Scene() {
     [vRefsFloor, screenFbo, debugTextures]
   )
 
+  const vActive = useRef(0)
+
   // Update flow simulation
   useFrame(({ gl, scene, clock }, delta) => {
     const shouldDoubleRender = delta > 1 / 75
@@ -132,6 +134,36 @@ export function Scene() {
         vRefsFloor
       )
     }
+
+    vActive.current = lerp(
+      vActive.current,
+      clamp(0, 1, vRefsFloor.uv.distanceTo(new THREE.Vector2(0.5, 0.5)) * 5),
+      5 * delta
+    )
+
+    ferroMeshMaterial.uniforms.uDiskRadius.value = valueRemap(
+      vActive.current,
+      0,
+      1,
+      0.7,
+      2
+    )
+
+    ferroMeshMaterial.uniforms.uHeightMax.value = valueRemap(
+      vActive.current,
+      0,
+      1,
+      0.4,
+      0.15
+    )
+
+    ferroMeshMaterial.uniforms.uHeightMin.value = valueRemap(
+      vActive.current,
+      0,
+      1,
+      0.15,
+      0
+    )
 
     raymarchMaterial.uniforms.uFlowSize.value = FLOW_SIM_SIZE / 2
 
@@ -166,9 +198,9 @@ export function Scene() {
       <mesh
         rotation={[Math.PI / -2, 0, 0]}
         position={[0, 0, 0]}
-        scale={[3, 3, 3]}
+        scale={[2, 2, 2]}
       >
-        <planeGeometry args={[2, 2, 100, 100]} />
+        <planeGeometry args={[2, 2, 200, 200]} />
         <primitive object={ferroMeshMaterial} />
       </mesh>
 

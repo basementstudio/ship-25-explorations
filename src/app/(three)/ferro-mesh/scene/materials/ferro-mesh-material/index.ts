@@ -9,9 +9,12 @@ export function createFerroMeshMaterial() {
     glslVersion: THREE.GLSL3,
     vertexShader,
     fragmentShader,
-    wireframe: true,
+    // wireframe: true,
     uniforms: {
-      uTime: { value: Math.PI }
+      uTime: { value: Math.PI },
+      uDiskRadius: { value: 1 },
+      uHeightMax: { value: 0.4 },
+      uHeightMin: { value: 0.15 }
     }
   })
 }
