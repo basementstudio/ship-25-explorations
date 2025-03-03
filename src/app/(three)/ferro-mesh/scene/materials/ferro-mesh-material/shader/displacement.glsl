@@ -1,10 +1,17 @@
-// Calculate surface displacement
+// TODO:
+// Calculate dissplacement of the vertex from the alreay displaced vertices
+// That wat each peak will be able to pull out without breaking
+
+// Also add the water simulation to it
+// And the particles simulation for ferrofluids made in polar coorinates
 
 #pragma glslify: PI = require(glsl-constants/PI)
 
 #pragma glslify: getVogel = require(../../glsl-shared/get-vogel.glsl)
 #pragma glslify: valueRemap = require(../../glsl-shared/value-remap.glsl)
 #pragma glslify: snoise2 = require('glsl-noise/classic/2d')
+
+uniform vec3 uMousePosition;
 
 vec4 textureGood(sampler2D sam, vec2 uv) {
   vec2 texelSize = vec2(1.0) / vec2(textureSize(sam, 0));
@@ -43,6 +50,11 @@ float opSmoothIntersection(float d1, float d2, float k) {
   return mix(d2, d1, h) + k * h * (1.0 - h);
 }
 
+float integralSmoothstep(float x, float T) {
+  if (x > T) return x - T / 2.0;
+  return x * x * x * (1.0 - x * 0.5 / T) / T / T;
+}
+
 float getPyrmidDistance(
   vec3 p,
   vec3 pyramidCenter,
@@ -62,14 +74,26 @@ vec3 pyramid(
   float pyramidRadius,
   float pyramidHeight
 ) {
-  float d = getPyrmidDistance(p, pyramidCenter, pyramidRadius, pyramidHeight);
+  float pyramidFactor = getPyrmidDistance(
+    p,
+    pyramidCenter,
+    pyramidRadius,
+    pyramidHeight
+  );
 
-  d = smoothstep(0.0, 1.0, d);
-  d = pow(d, 0.5);
+  float d = pyramidFactor;
+
+  vec3 directionToCenter = normalize(pyramidCenter);
+  float distanceToCenter = length(pyramidCenter);
+
   d = 1.0 - d;
   d = d * pyramidHeight;
 
-  p.y = opSmoothIntersection(p.y, d, 0.04);
+  p.y = max(p.y, d);
+
+  // float distToClear
+
+  // p.xz += directionToCenter.xz * (1.0 - pyramidFactor) * 0.2 * pyramidHeight;
 
   return p;
 }
@@ -83,14 +107,14 @@ vec3 mainPyramid(
   float d = getPyrmidDistance(p, pyramidCenter, pyramidRadius, pyramidHeight);
 
   d = 1.0 - d;
-  d = pow(d, 6.0);
-  d = smoothstep(0.0, 1.0, d);
 
-  // d = pow(d, 0.5);
+  d = integralSmoothstep(d, 0.5);
 
   d = d * pyramidHeight;
 
-  p.y = opSmoothIntersection(p.y, d, 0.1);
+  // p.y = opSmoothIntersection(p.y, d, 0.1);
+
+  p.y = max(p.y, d);
   return p;
 }
 
@@ -100,9 +124,10 @@ vec3 getNoise(vec2 uv) {
   return noise;
 }
 
-const int numPyramids = 30;
+const int numPyramids = 60;
 
 vec3 displacement(vec3 p) {
+  // return p;
   p = mainPyramid(p, vec3(0.0), uMainPyramidRadius, uMainPyramidHeight);
 
   for (int i = 2; i < numPyramids; i++) {
@@ -116,11 +141,19 @@ vec3 displacement(vec3 p) {
 
     center *= pow(d, 0.8) * uDiskRadius;
 
-    p = pyramid(p, center, size, size);
+    float distToMouse =
+      length(center - vec3(uMousePosition.x, 0.0, uMousePosition.z)) - 0.2;
+
+    distToMouse *= 3.0;
+    float distToMouseClamped = 1.0 - clamp(distToMouse, 0.0, 1.0);
+
+    p = pyramid(p, center, size * 0.5, size * distToMouseClamped * 1.0);
   }
 
+  float n = snoise2(p.xz * 10.0 + vec2(0.0, -uTime)) * 0.005;
+
   // add noise
-  p.y += snoise2(p.xz * 10.0 + vec2(0.0, -uTime)) * 0.005;
+  p.y += n * clamp(1.0 - p.y * 10.0, 0.0, 1.0);
 
   return p;
 }

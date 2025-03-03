@@ -7,9 +7,10 @@ export type LerpedMouse = ReturnType<typeof useLerpMouse>[2]
 
 interface LerpMouseParams {
   lerpSpeed?: number
+  intercept?: (event: ThreeEvent<PointerEvent>) => void
 }
 
-export function useLerpMouse({ lerpSpeed = 1 }: LerpMouseParams = {}) {
+export function useLerpMouse({ lerpSpeed = 1, intercept }: LerpMouseParams = {}) {
   const vRefs = useMemo(
     () => ({
       uv: new THREE.Vector2(),
@@ -26,6 +27,11 @@ export function useLerpMouse({ lerpSpeed = 1 }: LerpMouseParams = {}) {
 
   const handlePointerMove = useCallback(
     (e: ThreeEvent<PointerEvent>) => {
+
+      if (intercept) {
+        intercept(e)
+      }
+
       if (e.uv) {
         vRefs.uv.copy(e.uv)
         vRefs.point.copy(e.point)

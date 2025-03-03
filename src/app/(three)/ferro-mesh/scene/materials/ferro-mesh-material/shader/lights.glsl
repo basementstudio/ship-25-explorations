@@ -7,12 +7,16 @@ vec2 normalToEnvUv(vec3 normal) {
   // Normalize the vector (ensure it's unit length)
   vec3 n = normalize(normal);
 
-  // Convert to spherical coordinates
-  // u = atan(x,z) / (2*PI) + 0.5 -> This maps [-π,π] to [0,1]
-  // v = acos(y) / PI -> This maps [0,π] to [0,1]
+  // Standard equirectangular mapping for HDRIs
+  // phi: azimuthal angle (around y-axis) - maps to U coordinate
+  // theta: polar angle (from y-axis) - maps to V coordinate
+  float phi = atan(n.z, n.x);
+  float theta = acos(n.y);
+
+  // Map to [0,1] range for texture coordinates
   vec2 uv = vec2(
-    atan(n.x, n.z) * 0.15915494309189533576888376337251 + 0.5, // 0.159... is 1/(2*PI)
-    acos(n.y) * 0.318309886183790671537767526745 // 0.318... is 1/PI
+    (phi + 3.14159265359) / (2.0 * 3.14159265359), // Map phi from [-PI, PI] to [0, 1]
+    theta / 3.14159265359 // Map theta from [0, PI] to [0, 1]
   );
 
   return uv;
@@ -60,32 +64,41 @@ vec4 textureGaussian(sampler2D sam, vec2 uv) {
   return result;
 }
 
-float getFresnel(vec3 normal, vec3 viewDir) {
-  // fresnel
-  float ft = dot(normal, normalize(vec3(0.0, 0.0, 1.0)));
-  float fresnelValue = smoothstep(0.6, 1.0, min(1.0, pow(1.0 - ft, 2.0)));
-  return fresnelValue;
-}
-
 float desaturate(vec3 col) {
   return dot(col, vec3(0.299, 0.587, 0.114));
 }
 
-vec3 getEnv2(vec3 normal) {
-  vec2 uv = normalToEnvUv(normal);
-  uv.y = 1.0 - uv.y;
-  return textureGood(uEnvMap2, uv).rgb;
+vec3 getEnv2(vec2 uv) {
+  // displace the env in the X axis
+  // uv.x += 0.25;
+  vec3 envSample = textureGood(uEnvMap2, uv).rgb;
+  envSample = pow(envSample, vec3(2.0));
+  return envSample;
 }
 
 vec2 textureScale = vec2(1.0, 1.0);
 
 vec3 ambientLightDir = normalize(vec3(0.0, 0.7, 1.0));
-float ambientLightIntensity = 0.4;
+float ambientLightIntensity = 0.1;
 
-vec4 getLights(vec3 normal, vec3 viewDir) {
-  vec2 uv = normalToEnvUv(normal);
+float getFresnel(
+  vec3 normal,
+  vec3 viewDir,
+  float fresnelBias,
+  float fresnelScale
+) {
+  float fresnelFactor =
+    fresnelBias +
+    fresnelScale * pow(1.0 - dot(normal, normalize(viewDir)), 3.0);
 
+  return fresnelFactor;
+}
+
+vec4 getLights(vec3 normal, vec3 cameraPosition, vec3 worldPosition) {
+  vec3 viewDir = normalize(cameraPosition - worldPosition);
   vec3 reflectedNormal = reflect(viewDir, normal);
+
+  vec2 envUv = normalToEnvUv(normal);
 
   vec3 col = vec3(0.0);
 
@@ -94,12 +107,12 @@ vec4 getLights(vec3 normal, vec3 viewDir) {
 
   col += lightAmbient;
 
-  vec3 env = getEnv2(reflectedNormal);
-  // env *= pow(clamp(1.0 - dot(normal, vec3(0.0, 1.0, 0.0)), 0.0, 1.0), 0.2);
-  env *= smoothstep(1.0, 0.9, dot(normal, vec3(0.0, 1.0, 0.0)));
-  col += env;
+  vec3 env = getEnv2(envUv);
+  float fresnel = getFresnel(normal, viewDir, 0.1, 0.2);
 
-  float fresnel = getFresnel(normal, viewDir);
+  env *= fresnel;
+
+  col += env;
 
   // fade out
   float alpha = 1.0;
@@ -116,7 +129,8 @@ vec4 getLights(vec3 normal, vec3 viewDir) {
     alpha *= alphaMultiplier;
   }
 
-  return vec4(col, alpha);
+  return vec4(vec3(fresnel), alpha);
+  // return vec4(col, alpha);
 }
 
 #pragma glslify: export(getLights)

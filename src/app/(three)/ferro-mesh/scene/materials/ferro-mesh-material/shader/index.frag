@@ -37,9 +37,7 @@ vec3 calculateNormal(vec3 pOrigin) {
 void main() {
   vec3 normal = calculateNormal(pOrigin);
 
-  vec3 viewDir = normalize(cameraPosition - worldPosition);
-
-  vec4 color = getLights(normal, viewDir);
+  vec4 color = getLights(normal, cameraPosition, worldPosition);
 
   // Output the color
   fragColor = color;

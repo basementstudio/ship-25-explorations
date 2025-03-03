@@ -23,7 +23,7 @@ export function useAssets() {
   envMap.wrapS = THREE.RepeatWrapping
   envMap.wrapT = THREE.RepeatWrapping
 
-  const envMap2 = useTexture("/textures/studio_small_02_1k.png")
+  const envMap2 = useTexture("/textures/env-map-01.jpg")
   envMap2.magFilter = THREE.NearestFilter
   envMap2.minFilter = THREE.NearestFilter
   envMap2.wrapS = THREE.RepeatWrapping

@@ -43,7 +43,11 @@ export function Scene() {
 
   updateFlowCamera(activeCamera as THREE.PerspectiveCamera)
 
-  const [handlePointerMoveFloor, lerpMouseFloor, vRefsFloor] = useLerpMouse()
+  const [handlePointerMoveFloor, lerpMouseFloor, vRefsFloor] = useLerpMouse({
+    intercept: (e) => {
+      e.point.z *= 0.5
+    }
+  })
 
   const frameCount = useRef(0)
 
@@ -119,7 +123,7 @@ export function Scene() {
 
   // Update flow simulation
   useFrame(({ gl, scene, clock }, delta) => {
-    gl.setClearColor("#111")
+    gl.setClearColor("#000")
 
     const shouldDoubleRender = delta > 1 / 75
 
@@ -149,16 +153,23 @@ export function Scene() {
       )
     }
 
-    vActive.current = lerp(vActive.current, getActive(), 2 * delta)
+    ferroMeshMaterial.uniforms.uMousePosition.value.lerp(
+      vRefsFloor.point,
+      3 * delta
+    )
 
-    vActiveFast.current = lerp(vActiveFast.current, getActive(), 6 * delta)
+    const activeFactor = getActive()
+
+    vActive.current = lerp(vActive.current, activeFactor, 6 * delta)
+
+    vActiveFast.current = lerp(vActiveFast.current, activeFactor, 10 * delta)
 
     ferroMeshMaterial.uniforms.uDiskRadius.value = valueRemap(
       vActive.current,
       0,
       1,
-      0.4,
-      1
+      0.35,
+      0.5
     )
 
     ferroMeshMaterial.uniforms.uHeightMax.value = valueRemap(
@@ -181,8 +192,8 @@ export function Scene() {
       vActiveFast.current,
       0,
       1,
-      1.2,
-      1
+      0.45,
+      0.4
     )
 
     ferroMeshMaterial.uniforms.uMainPyramidHeight.value = valueRemap(
@@ -190,7 +201,7 @@ export function Scene() {
       0,
       1,
       0.6,
-      0.3
+      0.5
     )
 
     ferroMeshMaterial.uniforms.uTime.value = clock.getElapsedTime()
@@ -239,6 +250,7 @@ export function Scene() {
         <meshBasicMaterial map={flowFbo.read.texture} />
       </mesh>
 
+      {/* Ferro mesh */}
       <mesh
         rotation={[Math.PI / -2, 0, 0]}
         position={[0, 0, 0]}
