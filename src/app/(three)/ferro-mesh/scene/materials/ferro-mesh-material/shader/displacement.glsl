@@ -155,26 +155,26 @@ vec3 addParticles(vec3 pBase) {
 
     particlepos = particlepos.xzy;
 
-    float distToParticle = length(p.xz - particlepos.xz);
+    particlepos.y = pBase.y;
+
+    float distToParticle = length(p - particlepos);
 
     float size = valueRemap(distToParticle, 0.0, 1.0, 0.1, 0.0);
 
-    float distToMouse =
-      length(
-        particlepos - vec3(uMousePosition.x, particlepos.y, uMousePosition.z)
-      ) -
-      0.3;
+    float distToMouse = length(particlepos - uMousePosition) - 0.06;
 
-    distToMouse *= 10.0;
+    distToMouse *= 5.0;
 
     float distToMouseClamped = 1.0 - clamp(distToMouse, 0.0, 1.0);
+
+    distToMouseClamped = pow(distToMouseClamped, 2.0);
 
     p = pyramid(
       p,
       particlepos,
       pBase,
-      size * 0.5,
-      size * distToMouseClamped * 1.0
+      size * distToMouseClamped * 0.5,
+      size * distToMouseClamped * 0.8
     );
     // p = pyramid(p, particlepos, pBase, 0.05, 0.1);
   }
@@ -183,30 +183,12 @@ vec3 addParticles(vec3 pBase) {
 }
 
 vec3 displacement(vec3 p) {
-  // return p;
-  p = mainPyramid(p, vec3(0.0), uMainPyramidRadius, uMainPyramidHeight);
+  float distToCenter = length(p);
 
-  // for (int i = 2; i < numPyramids; i++) {
-  //   vec2 vogel = getVogel(1.0, float(i), float(numPyramids), 0.0);
-
-  //   float d = length(vogel);
-
-  //   float size = valueRemap(d, 0.0, 1.0, uHeightMax, uHeightMin);
-
-  //   vec3 center = normalize(vec3(vogel.x, 0.0, vogel.y));
-
-  //   center *= pow(d, 0.8) * uDiskRadius;
-
-  //   float distToMouse =
-  //     length(center - vec3(uMousePosition.x, 0.0, uMousePosition.z)) - 0.2;
-
-  //   distToMouse *= 3.0;
-  //   float distToMouseClamped = 1.0 - clamp(distToMouse, 0.0, 1.0);
-
-  //   p = pyramid(p, center, size * 0.5, size * distToMouseClamped * 1.0);
-  // }
-
-  p = addParticles(p);
+  if (distToCenter < 0.55) {
+    p = mainPyramid(p, vec3(0.0), uMainPyramidRadius, uMainPyramidHeight);
+    p = addParticles(p);
+  }
 
   float n = snoise2(p.xz * 10.0 + vec2(0.0, -uTime)) * 0.005;
 

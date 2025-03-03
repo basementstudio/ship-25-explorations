@@ -15,7 +15,7 @@ import { clamp, lerp, valueRemap } from "~/lib/utils/math"
 import { Cameras } from "./cameras"
 import { FLOW_SIM_SIZE } from "./constants"
 import { DebugTextures } from "./debug-textures"
-import { setupScene, simulate } from "./fluid-sim"
+import { Atractor, setupScene, simulate } from "./fluid-sim"
 import { useAssets } from "./use-assets"
 import { DoubleFBO } from "./use-double-fbo"
 import { LerpedMouse, useLerpMouse } from "./use-lerp-mouse"
@@ -141,13 +141,26 @@ export function Scene() {
   const vRefs = useMemo(
     () => ({
       pointerPos: new THREE.Vector3(),
-      smoothPointerPos: new THREE.Vector3()
+      smoothPointerPos: new THREE.Vector3(),
+      prevSmoothPointerPos: new THREE.Vector3(),
+      pointerVelocity: new THREE.Vector3()
     }),
     []
   )
 
   const pointerPos = vRefs.pointerPos
   const smoothPointerPos = vRefs.smoothPointerPos
+  const prevSmoothPointerPos = vRefs.prevSmoothPointerPos
+  const pointerVelocity = vRefs.pointerVelocity
+
+  const attractor = useMemo<Atractor>(
+    () => ({
+      position: [0, 0],
+      velocity: [0, 0],
+      radius: 0.05
+    }),
+    []
+  )
 
   const [floorVec, floorPointerPos] = usePointerPos()
   const [wallVec, wallPointerPos] = usePointerPos()
@@ -180,7 +193,27 @@ export function Scene() {
       }
     })
 
+    prevSmoothPointerPos.copy(smoothPointerPos)
     smoothPointerPos.lerp(pointerPos, Math.min(delta * 5, 1))
+
+    pointerVelocity.copy(smoothPointerPos).sub(prevSmoothPointerPos)
+
+    attractor.position[0] = valueRemap(
+      pointerPos.x,
+      0,
+      particlesScale / 2,
+      0.5,
+      1
+    )
+    attractor.position[1] = valueRemap(
+      pointerPos.z,
+      0,
+      particlesScale / 2,
+      0.5,
+      0
+    )
+    attractor.velocity[0] = pointerVelocity.x
+    attractor.velocity[1] = -pointerVelocity.z
 
     if (debugPointer && pointerDebugRef.current) {
       pointerDebugRef.current.position.copy(pointerPos)
@@ -189,7 +222,7 @@ export function Scene() {
 
   // Update flow simulation
   useFrame(({ gl, scene, clock }, delta) => {
-    simulate(delta)
+    simulate(delta, attractor)
 
     if (points.current && debugParticles) {
       points.current.geometry.attributes.position.needsUpdate = true
@@ -263,16 +296,16 @@ export function Scene() {
       vActiveFast.current,
       0,
       1,
-      0.45,
-      0.4
+      0.35,
+      0.35
     )
 
     ferroMeshMaterial.uniforms.uMainPyramidHeight.value = valueRemap(
       vActiveFast.current,
       0,
       1,
-      0.6,
-      0.5
+      0.55,
+      0.55
     )
 
     ferroMeshMaterial.uniforms.uTime.value = clock.getElapsedTime()
@@ -326,10 +359,11 @@ export function Scene() {
         renderOrder={2}
         visible={debugPointer}
         rotation={[0, 0, 0]}
-        position={[0, 0.2, 0]}
+        position={[0, 0.18, 0]}
         {...conePointerPos}
       >
-        <coneGeometry args={[0.3, 0.4, 10, 10]} />
+        {/* <coneGeometry args={[0.3, 0.3 * Math.sqrt(3), 10, 10]} /> */}
+        <coneGeometry args={[0.31, 0.27 * Math.sqrt(3), 10, 10]} />
         <meshBasicMaterial
           transparent
           depthTest={false}

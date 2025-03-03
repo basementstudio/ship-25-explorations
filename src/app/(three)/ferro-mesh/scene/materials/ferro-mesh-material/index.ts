@@ -11,7 +11,6 @@ export function createFerroMeshMaterial() {
     vertexShader,
     fragmentShader,
     // wireframe: true,
-    transparent: true,
     defines: {
       MAX_PARTICLES: maxParticles
     },

@@ -98,7 +98,7 @@ vec4 getLights(vec3 normal, vec3 cameraPosition, vec3 worldPosition) {
   vec3 viewDir = normalize(cameraPosition - worldPosition);
   vec3 reflectedNormal = reflect(viewDir, normal);
 
-  vec2 envUv = normalToEnvUv(normal);
+  vec2 envUv = normalToEnvUv(reflectedNormal);
 
   vec3 col = vec3(0.0);
 
@@ -126,11 +126,11 @@ vec4 getLights(vec3 normal, vec3 cameraPosition, vec3 worldPosition) {
   if (worldPosition.z > 0.0) {
     col *= alphaMultiplier;
   } else {
-    alpha *= alphaMultiplier;
+    col *= alphaMultiplier;
   }
 
-  return vec4(vec3(fresnel), alpha);
   // return vec4(col, alpha);
+  return vec4(vec3(fresnel) * 0.4 * alphaMultiplier + col, 1.0);
 }
 
 #pragma glslify: export(getLights)

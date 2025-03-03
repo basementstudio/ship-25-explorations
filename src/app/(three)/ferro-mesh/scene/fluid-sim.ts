@@ -5,10 +5,9 @@ const FLUID_CELL = 0
 const AIR_CELL = 1
 const SOLID_CELL = 2
 
-interface Atractor {
-  x: number
-  y: number
-  force: number
+export interface Atractor {
+  position: [number, number]
+  velocity: [number, number]
   radius: number
 }
 
@@ -207,9 +206,9 @@ class FlipFluid {
     atractor?: Atractor
   ): void {
     // console.log(this.particlePos[0], this.particlePos[1])
-    const gravityStrength = 0.1
-    const dampingFactor = 0.94 // General velocity damping
-    const orbitDampingFactor = 0.9 // Stronger damping for orbital motion
+    const gravityStrength = 0.14
+    const dampingFactor = 0.9 // General velocity damping
+    const orbitDampingFactor = 0.99 // Stronger damping for orbital motion
 
     for (let i = 0; i < this.numParticles; i++) {
       // Calculate distance vector from particle to gravity point
@@ -257,8 +256,11 @@ class FlipFluid {
       // update velocity attractor
       if (atractor) {
         // Calculate distance vector from particle to attractor
-        const dx = this.particlePos[particlePosDim * i] - atractor.x
-        const dy = this.particlePos[particlePosDim * i + 1] - atractor.y
+        const dx = this.particlePos[particlePosDim * i] - atractor.position[0]
+        const dy = this.particlePos[particlePosDim * i + 1] - atractor.position[1]
+
+        // console.log(this.particlePos[particlePosDim * i]);
+
 
         // Calculate distance magnitude
         const distance = Math.sqrt(dx * dx + dy * dy)
@@ -268,16 +270,20 @@ class FlipFluid {
 
         // Only apply force if within radius
         if (distance < atractor.radius) {
+          // console.log('apply');
+
           // Calculate normalized direction vector and scale by force
-          const forceMagnitude = atractor.force / distance
-          const forceX = dx * forceMagnitude
-          const forceY = dy * forceMagnitude
+          const forceX = atractor.velocity[0] * 40
+          const forceY = atractor.velocity[1] * 40
 
           // Apply force to velocity
-          this.particleVel[2 * i] /= 1.1
-          this.particleVel[2 * i] -= forceX
-          this.particleVel[2 * i + 1] /= 1.1
-          this.particleVel[2 * i + 1] -= forceY
+          // this.particleVel[2 * i] /= 1.1
+          // this.particleVel[2 * i] -= forceX
+          // this.particleVel[2 * i + 1] /= 1.1
+          // this.particleVel[2 * i + 1] -= forceY
+
+          this.particleVel[2 * i] += forceX * 1
+          this.particleVel[2 * i + 1] += forceY * 1
         }
       } else {
       }
@@ -293,9 +299,9 @@ class FlipFluid {
           (this.particlePos[particlePosDim * i] - 0.5) +
           (this.particlePos[particlePosDim * i + 1] - 0.5) *
           (this.particlePos[particlePosDim * i + 1] - 0.5)
-        ) * 4
+        ) * 4.5
       let height = 1 - distToCenter
-      height = clamp(height, 0, 1) * 0.3
+      height = clamp(height, 0, 1) * 0.35
       this.particlePos[particlePosDim * i + 2] = height
 
       this.particlePosLerp[particlePosDim * i] = lerp(
@@ -890,7 +896,7 @@ export function setupScene({ isDarkMode }: SetupSceneOptions): typeof scene {
   const tankHeight = Number(simHeight)
   const tankWidth = Number(simWidth)
   const h = tankHeight / res
-  const density = 100.0
+  const density = 10.0
 
   // dam break
 
