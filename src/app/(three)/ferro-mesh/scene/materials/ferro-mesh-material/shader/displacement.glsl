@@ -12,6 +12,7 @@
 #pragma glslify: snoise2 = require('glsl-noise/classic/2d')
 
 uniform vec3 uMousePosition;
+uniform sampler2D uParticlesPositions;
 
 vec4 textureGood(sampler2D sam, vec2 uv) {
   vec2 texelSize = vec2(1.0) / vec2(textureSize(sam, 0));
@@ -61,7 +62,7 @@ float getPyrmidDistance(
   float pyramidRadius,
   float pyramidHeight
 ) {
-  float d = length(vec3(p.x, 0.0, p.z) - pyramidCenter) / pyramidRadius;
+  float d = length(p - pyramidCenter) / pyramidRadius;
 
   d = clamp(d, 0.0, 1.0);
 
@@ -71,11 +72,12 @@ float getPyrmidDistance(
 vec3 pyramid(
   vec3 p,
   vec3 pyramidCenter,
+  vec3 pBase,
   float pyramidRadius,
   float pyramidHeight
 ) {
   float pyramidFactor = getPyrmidDistance(
-    p,
+    pBase,
     pyramidCenter,
     pyramidRadius,
     pyramidHeight
@@ -89,7 +91,7 @@ vec3 pyramid(
   d = 1.0 - d;
   d = d * pyramidHeight;
 
-  p.y = max(p.y, d);
+  p.y = max(p.y, pBase.y + d);
 
   // float distToClear
 
@@ -124,31 +126,87 @@ vec3 getNoise(vec2 uv) {
   return noise;
 }
 
+ivec2 calcCoord(int size, int id) {
+  int j = int(id);
+  int x = j % size;
+  int y = j / size;
+  return ivec2(x, y);
+}
+
+ivec2 getSampleCoord(const sampler2D mapSampler, const float batchId) {
+  int size = textureSize(mapSampler, 0).x;
+  return calcCoord(size, int(batchId));
+}
+
 const int numPyramids = 60;
+
+float particlesScale = 1.2;
+
+vec3 addParticles(vec3 pBase) {
+  vec3 p = pBase;
+  for (int i = 0; i < MAX_PARTICLES; i++) {
+    ivec2 coord = getSampleCoord(uParticlesPositions, float(i));
+    vec3 particlepos =
+      texelFetch(uParticlesPositions, coord, 0).xyz *
+        vec3(particlesScale, particlesScale, particlesScale) -
+      vec3(vec2(particlesScale / 2.0), 0.0);
+
+    particlepos.y *= -1.0;
+
+    particlepos = particlepos.xzy;
+
+    float distToParticle = length(p.xz - particlepos.xz);
+
+    float size = valueRemap(distToParticle, 0.0, 1.0, 0.1, 0.0);
+
+    float distToMouse =
+      length(
+        particlepos - vec3(uMousePosition.x, particlepos.y, uMousePosition.z)
+      ) -
+      0.3;
+
+    distToMouse *= 10.0;
+
+    float distToMouseClamped = 1.0 - clamp(distToMouse, 0.0, 1.0);
+
+    p = pyramid(
+      p,
+      particlepos,
+      pBase,
+      size * 0.5,
+      size * distToMouseClamped * 1.0
+    );
+    // p = pyramid(p, particlepos, pBase, 0.05, 0.1);
+  }
+
+  return p;
+}
 
 vec3 displacement(vec3 p) {
   // return p;
   p = mainPyramid(p, vec3(0.0), uMainPyramidRadius, uMainPyramidHeight);
 
-  for (int i = 2; i < numPyramids; i++) {
-    vec2 vogel = getVogel(1.0, float(i), float(numPyramids), 0.0);
+  // for (int i = 2; i < numPyramids; i++) {
+  //   vec2 vogel = getVogel(1.0, float(i), float(numPyramids), 0.0);
 
-    float d = length(vogel);
+  //   float d = length(vogel);
 
-    float size = valueRemap(d, 0.0, 1.0, uHeightMax, uHeightMin);
+  //   float size = valueRemap(d, 0.0, 1.0, uHeightMax, uHeightMin);
 
-    vec3 center = normalize(vec3(vogel.x, 0.0, vogel.y));
+  //   vec3 center = normalize(vec3(vogel.x, 0.0, vogel.y));
 
-    center *= pow(d, 0.8) * uDiskRadius;
+  //   center *= pow(d, 0.8) * uDiskRadius;
 
-    float distToMouse =
-      length(center - vec3(uMousePosition.x, 0.0, uMousePosition.z)) - 0.2;
+  //   float distToMouse =
+  //     length(center - vec3(uMousePosition.x, 0.0, uMousePosition.z)) - 0.2;
 
-    distToMouse *= 3.0;
-    float distToMouseClamped = 1.0 - clamp(distToMouse, 0.0, 1.0);
+  //   distToMouse *= 3.0;
+  //   float distToMouseClamped = 1.0 - clamp(distToMouse, 0.0, 1.0);
 
-    p = pyramid(p, center, size * 0.5, size * distToMouseClamped * 1.0);
-  }
+  //   p = pyramid(p, center, size * 0.5, size * distToMouseClamped * 1.0);
+  // }
+
+  p = addParticles(p);
 
   float n = snoise2(p.xz * 10.0 + vec2(0.0, -uTime)) * 0.005;
 

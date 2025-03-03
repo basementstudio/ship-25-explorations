@@ -10,7 +10,7 @@ in vec3 worldPosition;
 
 in vec3 vNormal;
 
-#pragma glslify: displacement = require('./displacement.glsl', texture = texture, textureSize = textureSize, textureLod = textureLod)
+#pragma glslify: displacement = require('./displacement.glsl', texture = texture, textureSize = textureSize, textureLod = textureLod, MAX_PARTICLES = MAX_PARTICLES)
 
 #pragma glslify: getLights = require('./lights.glsl', texture = texture, textureSize = textureSize, worldPosition = worldPosition, textureLod = textureLod)
 

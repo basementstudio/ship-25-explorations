@@ -39,13 +39,13 @@ vec2 squareToCircle(vec2 p) {
 }
 
 vec3 initialRemap(vec3 p) {
-  p = gain(p, 0.4);
+  p = gain(p, 0.3);
   p.xy -= vec2(0.5);
   p *= 2.0;
   return p;
 }
 
-#pragma glslify: displacement = require('./displacement.glsl', texture = texture, textureSize = textureSize, textureLod = textureLod)
+#pragma glslify: displacement = require('./displacement.glsl', texture = texture, textureSize = textureSize, textureLod = textureLod, MAX_PARTICLES = MAX_PARTICLES)
 
 vec3 calculateNormal(vec3 displaced, vec3 pOrigin) {
   // Define a small step size
