@@ -12,7 +12,7 @@ varying vec2 vUv;
 
 #pragma glslify: valueRemap = require("../../glsl-shared/value-remap.glsl")
 
-#pragma glslify: PI = require("glsl-constants/pi")
+#pragma glslify: PI = require("glsl-constants/PI")
 
 // circular geometrical
 float smin(float a, float b, float k) {
