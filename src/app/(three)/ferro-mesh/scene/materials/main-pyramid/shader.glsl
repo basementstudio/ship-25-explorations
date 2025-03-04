@@ -1,5 +1,5 @@
 // Constants
-const float PYRAMID_RADIUS = 0.33;
+const float PYRAMID_RADIUS = 0.35;
 const float PYRAMID_HEIGHT = 0.48;
 const float NORMAL_EPSILON = 0.01;
 

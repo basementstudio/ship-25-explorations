@@ -283,8 +283,8 @@ class FlipFluid {
           // console.log('apply');
 
           // Calculate normalized direction vector and scale by force
-          const forceX = atractor.velocity[0] * 40
-          const forceY = atractor.velocity[1] * 40
+          const forceX = atractor.velocity[0] * 20
+          const forceY = atractor.velocity[1] * 20
 
           // Apply force to velocity
           // this.particleVel[2 * i] /= 1.1
@@ -328,7 +328,14 @@ class FlipFluid {
       this.particlePosLerp[particleIndex + 1] - this.mousePoint[1],
       this.particlePosLerp[particleIndex + 2] - this.mousePoint[2]
     )
-    this.particlePosLerp[particleIndex + 3] = 1 - clamp(distToMouse * 3, 0.0, 1.0)
+
+    // disable particles when on the ground
+    const particleHFactor = clamp(this.particlePosLerp[particleIndex + 1] * 20, 0.0, 1.0)
+
+    let activeFactror = (1 - clamp(distToMouse * 10 - 0.3, 0.0, 1.0)) * particleHFactor
+    activeFactror = Math.pow(activeFactror, 0.5)
+
+    this.particlePosLerp[particleIndex + 3] = lerp(this.particlePosLerp[particleIndex + 3], activeFactror, 0.3)
 
 
     this.particleNormal.set(
@@ -868,7 +875,7 @@ const MAX_DT = 1.0 / 25.0
 const MIN_DT = 1 / 60
 
 const scene = {
-  gravity: [0.5, 0.5] as [number, number],
+  gravity: [0.5, 0.6] as [number, number],
   dt: MAX_DT, // prevent delta to be too big
   flipRatio: 0.9,
   numPressureIters: 100,
@@ -917,7 +924,7 @@ export function setupScene({ isDarkMode }: SetupSceneOptions): typeof scene {
 
   // compute number of particles
 
-  const r = 2.9 * h // particle radius w.r.t. cell size
+  const r = 1.9 * h // particle radius w.r.t. cell size
 
   scene.numX = numX
   scene.numY = numY

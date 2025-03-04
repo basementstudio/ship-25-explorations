@@ -70,8 +70,7 @@ float desaturate(vec3 col) {
 
 vec3 getEnv2(vec2 uv) {
   // displace the env in the X axis
-  // uv.x += 0.25;
-  vec3 envSample = textureGood(uEnvMap2, uv).rgb;
+  vec3 envSample = texture(uEnvMap2, uv).rgb;
   envSample = pow(envSample, vec3(2.0));
   return envSample;
 }
@@ -130,7 +129,7 @@ vec4 getLights(vec3 normal, vec3 cameraPosition, vec3 worldPosition) {
   }
 
   // return vec4(col, alpha);
-  return vec4(vec3(fresnel) * 0.4 * alphaMultiplier + col, 1.0);
+  return vec4(vec3(fresnel) * 0.2 * alphaMultiplier + col, 1.0);
 }
 
 #pragma glslify: export(getLights)

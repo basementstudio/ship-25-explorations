@@ -1,5 +1,5 @@
 // fucntion to draw the main pyramid
-const PYRAMID_RADIUS = 0.33
+const PYRAMID_RADIUS = 0.35
 const PYRAMID_HEIGHT = 0.48
 const NORMAL_EPSILON = 0.01
 
@@ -22,20 +22,27 @@ export function calculatePyramid(x: number, y: number) {
 /**
  * Get the normal of the pyramid
  * @param x - x coordinate
- * @param y - y coordinate
+ * @param z - z coordinate
  * @param h - pre-calculated height at x,y
  */
-export function getPyramidNormal(x: number, y: number, h: number): [number, number, number] {
-  const h1 = h
-  const h2 = calculatePyramid(x + NORMAL_EPSILON, y)
-  const h3 = calculatePyramid(x, y + NORMAL_EPSILON)
+export function getPyramidNormal(x: number, z: number, h: number): [number, number, number] {
+  const hCenter = h
+  const hx = calculatePyramid(x + NORMAL_EPSILON, z)
+  const hz = calculatePyramid(x, z + NORMAL_EPSILON)
 
-  // Correctly calculate the gradient components (derivatives)
-  const nx = (h2 - h1) / NORMAL_EPSILON
-  const ny = (h3 - h1) / NORMAL_EPSILON
-  const nz = 1.0
+  // For a height field y = h(x,z), the normal is (-dh/dx, 1, -dh/dz)
+  const n = [
+    -(hx - hCenter) / NORMAL_EPSILON,
+    1.0,
+    -(hz - hCenter) / NORMAL_EPSILON,
+  ] as [number, number, number]
 
-  // Normalize the vector
-  const length = Math.sqrt(nx * nx + ny * ny + nz * nz)
-  return [nx / length, ny / length, nz / length]
+  return normalize(n)
 }
+
+const normalize = (n: [number, number, number]): [number, number, number] => {
+  const length = Math.sqrt(n[0] * n[0] + n[1] * n[1] + n[2] * n[2])
+  return [n[0] / length, n[1] / length, n[2] / length]
+}
+
+

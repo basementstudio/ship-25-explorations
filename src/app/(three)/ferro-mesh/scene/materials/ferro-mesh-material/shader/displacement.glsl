@@ -140,7 +140,8 @@ ivec2 getSampleCoord(const sampler2D mapSampler, const float batchId) {
   return calcCoord(size, int(batchId));
 }
 
-const int numPyramids = 60;
+float pyramidRadScale = 30.0;
+float pyramidHeightScale = 0.07;
 
 vec3 particlePyramid(
   vec3 p,
@@ -151,10 +152,10 @@ vec3 particlePyramid(
 ) {
   float displacedH = distance(p, pBase);
 
-  float distToParticle = length(pBase - particlepos) * 40.0;
+  float distToParticle = length(pBase - particlepos) * pyramidRadScale;
   float particleFactor = 1.0 - clamp(distToParticle, 0.0, 1.0);
 
-  float desiredDisplacement = particleFactor * 0.07 * size;
+  float desiredDisplacement = particleFactor * pyramidHeightScale * size;
 
   p += particleNormal * max(0.0, desiredDisplacement - displacedH);
 
@@ -172,16 +173,16 @@ vec3 addParticles(vec3 pBase) {
 
     vec3 particlepos = particleSample.xyz;
 
-    p = particlePyramid(
-      p,
-      pBase,
-      particlepos,
-      particleNormal.xzy,
-      1.0
-      // particleSample.w
-    );
-    // if (particleSample.w > 0.0) {
-    // }
+    if (particleSample.w > 0.0) {
+      p = particlePyramid(
+        p,
+        pBase,
+        particlepos,
+        particleNormal.xyz,
+        // 1.0
+        particleSample.w
+      );
+    }
   }
 
   return p;
