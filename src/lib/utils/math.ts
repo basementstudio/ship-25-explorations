@@ -47,7 +47,11 @@ export const mix = (a: number, b: number, t: number) => {
   return a * (1 - t) + b * t
 }
 
+/** highp smoothstep */
 export const smoothstep = (edge0: number, edge1: number, x: number) => {
-  const t = clamp((x - edge0) / (edge1 - edge0), 0, 1)
+  const denom = edge1 - edge0
+  if (Math.abs(denom) < 1e-6) return 0.5
+
+  const t = Math.max(0, Math.min(1, (x - edge0) / denom))
   return t * t * (3 - 2 * t)
 }

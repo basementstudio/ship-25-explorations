@@ -15,7 +15,7 @@ const PYRAMID_HEIGHT = 0.48
 const NORMAL_EPSILON = 0.01
 
 export function calculatePyramid(x: number, y: number) {
-  let distance = Math.sqrt(x * x + y * y) / PYRAMID_RADIUS
+  let distance = Math.hypot(x, + y) / PYRAMID_RADIUS
   distance = clamp(0, 1, distance)
   return f4(distance) * PYRAMID_HEIGHT
 }
