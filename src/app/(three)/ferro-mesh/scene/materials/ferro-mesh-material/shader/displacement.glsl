@@ -10,6 +10,7 @@
 #pragma glslify: getVogel = require(../../glsl-shared/get-vogel.glsl)
 #pragma glslify: valueRemap = require(../../glsl-shared/value-remap.glsl)
 #pragma glslify: snoise2 = require('glsl-noise/classic/2d')
+#pragma glslify: calculatePyramid = require(../../main-pyramid/shader.glsl)
 
 uniform vec3 uMousePosition;
 uniform sampler2D uParticlesPositions;
@@ -140,20 +141,11 @@ ivec2 getSampleCoord(const sampler2D mapSampler, const float batchId) {
 
 const int numPyramids = 60;
 
-float particlesScale = 1.2;
-
 vec3 addParticles(vec3 pBase) {
   vec3 p = pBase;
   for (int i = 0; i < MAX_PARTICLES; i++) {
     ivec2 coord = getSampleCoord(uParticlesPositions, float(i));
-    vec3 particlepos =
-      texelFetch(uParticlesPositions, coord, 0).xyz *
-        vec3(particlesScale, particlesScale, particlesScale) -
-      vec3(vec2(particlesScale / 2.0), 0.0);
-
-    particlepos.y *= -1.0;
-
-    particlepos = particlepos.xzy;
+    vec3 particlepos = texelFetch(uParticlesPositions, coord, 0).xyz;
 
     particlepos.y = pBase.y;
 
@@ -186,14 +178,14 @@ vec3 displacement(vec3 p) {
   float distToCenter = length(p);
 
   if (distToCenter < 0.55) {
-    p = mainPyramid(p, vec3(0.0), uMainPyramidRadius, uMainPyramidHeight);
-    p = addParticles(p);
+    p.y = calculatePyramid(p.x, p.z);
+    // p = addParticles(p);
   }
 
   float n = snoise2(p.xz * 10.0 + vec2(0.0, -uTime)) * 0.005;
 
   // add noise
-  p.y += n * clamp(1.0 - p.y * 10.0, 0.0, 1.0);
+  // p.y += n * clamp(1.0 - p.y * 10.0, 0.0, 1.0);
 
   return p;
 }

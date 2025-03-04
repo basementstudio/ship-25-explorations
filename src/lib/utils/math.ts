@@ -41,3 +41,13 @@ export const hexToRgb = (hex: string) => {
   const b = parseInt(match[2], 16)
   return { r, g, b }
 }
+
+
+export const mix = (a: number, b: number, t: number) => {
+  return a * (1 - t) + b * t
+}
+
+export const smoothstep = (edge0: number, edge1: number, x: number) => {
+  const t = clamp((x - edge0) / (edge1 - edge0), 0, 1)
+  return t * t * (3 - 2 * t)
+}

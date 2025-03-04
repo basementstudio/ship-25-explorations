@@ -10,7 +10,7 @@ export function createFerroMeshMaterial() {
     glslVersion: THREE.GLSL3,
     vertexShader,
     fragmentShader,
-    // wireframe: true,
+    wireframe: true,
     defines: {
       MAX_PARTICLES: maxParticles
     },

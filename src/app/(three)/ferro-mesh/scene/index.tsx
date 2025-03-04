@@ -210,10 +210,10 @@ export function Scene() {
       0,
       particlesScale / 2,
       0.5,
-      0
+      1
     )
     attractor.velocity[0] = pointerVelocity.x
-    attractor.velocity[1] = -pointerVelocity.z
+    attractor.velocity[1] = pointerVelocity.z
 
     if (debugPointer && pointerDebugRef.current) {
       pointerDebugRef.current.position.copy(pointerPos)
@@ -401,9 +401,6 @@ export function Scene() {
         visible={debugParticles}
         frustumCulled={false}
         renderOrder={2}
-        position={[-particlesScale / 2, 0, particlesScale / 2]}
-        rotation={[Math.PI / -2, 0, 0]}
-        scale={[particlesScale, particlesScale, particlesScale]}
         ref={points as any}
       >
         <bufferGeometry>
@@ -417,6 +414,7 @@ export function Scene() {
         <rawShaderMaterial
           transparent
           depthTest={false}
+          precision={"highp"}
           fragmentShader={`
             void main() {
               gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
@@ -430,7 +428,7 @@ export function Scene() {
             uniform mat4 modelMatrix;
             void main() {
               gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(position.xyz, 1.0);
-              gl_PointSize = 2.0;
+              gl_PointSize = 3.0;
             }
           `}
         />

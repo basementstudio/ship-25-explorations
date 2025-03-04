@@ -1,3 +1,5 @@
+import { calculatePyramid } from "./materials/main-pyramid/fn"
+
 const simHeight = 1
 const simWidth = 1
 
@@ -211,9 +213,11 @@ class FlipFluid {
     const orbitDampingFactor = 0.99 // Stronger damping for orbital motion
 
     for (let i = 0; i < this.numParticles; i++) {
+      const particleIndex = i * particlePosDim
+
       // Calculate distance vector from particle to gravity point
-      const gdx = gravity[0] - this.particlePos[particlePosDim * i]
-      const gdy = gravity[1] - this.particlePos[particlePosDim * i + 1]
+      const gdx = gravity[0] - this.particlePos[particleIndex]
+      const gdy = gravity[1] - this.particlePos[particleIndex + 1]
 
       // Calculate distance squared
       const gd2 = gdx * gdx + gdy * gdy
@@ -256,10 +260,10 @@ class FlipFluid {
       // update velocity attractor
       if (atractor) {
         // Calculate distance vector from particle to attractor
-        const dx = this.particlePos[particlePosDim * i] - atractor.position[0]
-        const dy = this.particlePos[particlePosDim * i + 1] - atractor.position[1]
+        const dx = this.particlePos[particleIndex] - atractor.position[0]
+        const dy = this.particlePos[particleIndex + 1] - atractor.position[1]
 
-        // console.log(this.particlePos[particlePosDim * i]);
+        // console.log(this.particlePos[particleIndex]);
 
 
         // Calculate distance magnitude
@@ -289,37 +293,25 @@ class FlipFluid {
       }
 
       // update position
-      this.particlePos[particlePosDim * i] += this.particleVel[2 * i] * dt
-      this.particlePos[particlePosDim * i + 1] +=
+      this.particlePos[particleIndex] += this.particleVel[2 * i] * dt
+      this.particlePos[particleIndex + 1] +=
         this.particleVel[2 * i + 1] * dt
 
-      const distToCenter =
-        Math.sqrt(
-          (this.particlePos[particlePosDim * i] - 0.5) *
-          (this.particlePos[particlePosDim * i] - 0.5) +
-          (this.particlePos[particlePosDim * i + 1] - 0.5) *
-          (this.particlePos[particlePosDim * i + 1] - 0.5)
-        ) * 4.5
-      let height = 1 - distToCenter
-      height = clamp(height, 0, 1) * 0.35
-      this.particlePos[particlePosDim * i + 2] = height
-
-      this.particlePosLerp[particlePosDim * i] = lerp(
-        this.particlePosLerp[particlePosDim * i],
-        this.particlePos[particlePosDim * i],
-        0.1
-      )
-      this.particlePosLerp[particlePosDim * i + 1] = lerp(
-        this.particlePosLerp[particlePosDim * i + 1],
-        this.particlePos[particlePosDim * i + 1],
-        0.1
-      )
-      this.particlePosLerp[particlePosDim * i + 2] = lerp(
-        this.particlePosLerp[particlePosDim * i + 2],
-        height,
-        0.1
-      )
+      this.calculateSmoothParticles(this.particlePos[particleIndex], this.particlePos[particleIndex + 1], particleIndex)
     }
+  }
+
+
+  public particlesScale = 1.2
+
+  calculateSmoothParticles(x: number, y: number, particleIndex: number) {
+    const remapedX = x * this.particlesScale - this.particlesScale / 2
+    const remapedY = y * this.particlesScale - this.particlesScale / 2
+    // lerp x,z
+    this.particlePosLerp[particleIndex] = lerp(this.particlePosLerp[particleIndex], remapedX, 0.1)
+    this.particlePosLerp[particleIndex + 2] = lerp(this.particlePosLerp[particleIndex + 2], remapedY, 0.1)
+    // update y
+    this.particlePosLerp[particleIndex + 1] = calculatePyramid(this.particlePosLerp[particleIndex], this.particlePosLerp[particleIndex + 2])
   }
 
   pushParticlesApart(numIters: number): void {
