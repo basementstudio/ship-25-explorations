@@ -1,4 +1,7 @@
 // fucntion to draw the main pyramid
+const PYRAMID_RADIUS = 0.33
+const PYRAMID_HEIGHT = 0.48
+const NORMAL_EPSILON = 0.01
 
 import { mix, smoothstep, clamp } from "~/lib/utils/math"
 
@@ -9,10 +12,6 @@ const f2 = (x: number, t: number) => (Math.sqrt(x * x + t) - Math.sqrt(t))
 const f3 = (x: number) => (f2(x - 1, 0.1) * 1.1)
 
 const f4 = (x: number) => mix(f1(x), f3(x), smoothstep(0, 1, x))
-
-const PYRAMID_RADIUS = 0.3
-const PYRAMID_HEIGHT = 0.48
-const NORMAL_EPSILON = 0.01
 
 export function calculatePyramid(x: number, y: number) {
   let distance = Math.hypot(x, + y) / PYRAMID_RADIUS
@@ -26,7 +25,7 @@ export function calculatePyramid(x: number, y: number) {
  * @param y - y coordinate
  * @param h - pre-calculated height at x,y
  */
-export function getNormal(x: number, y: number, h: number): [number, number, number] {
+export function getPyramidNormal(x: number, y: number, h: number): [number, number, number] {
   const h1 = h
   const h2 = calculatePyramid(x + NORMAL_EPSILON, y)
   const h3 = calculatePyramid(x, y + NORMAL_EPSILON)

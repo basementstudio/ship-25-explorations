@@ -25,23 +25,34 @@ import { useTargets } from "./use-targets"
 export function Scene() {
   const activeCamera = useThree((state) => state.camera)
 
-  const { positions, dataTexture } = useMemo(() => {
-    const simulation = setupScene({ isDarkMode: false })
+  const { simulation, positions, positionsTexture, normalsTexture } =
+    useMemo(() => {
+      const simulation = setupScene({ isDarkMode: false })
 
-    const positions = simulation.fluid!.particlePosLerp
+      const fluid = simulation.fluid!
 
-    const dataTexture = new THREE.DataTexture(
-      positions,
-      simulation.numX,
-      simulation.numY,
-      THREE.RGBAFormat,
-      THREE.FloatType
-    )
+      const positions = fluid.particlePosLerp
+      const normals = fluid.particleNormal
 
-    dataTexture.needsUpdate = true
+      const positionsTexture = new THREE.DataTexture(
+        positions,
+        simulation.numX,
+        simulation.numY,
+        THREE.RGBAFormat,
+        THREE.FloatType
+      )
+      positionsTexture.needsUpdate = true
 
-    return { simulation, positions, dataTexture }
-  }, [])
+      const normalsTexture = new THREE.DataTexture(
+        normals,
+        simulation.numX,
+        simulation.numY,
+        THREE.RGBAFormat,
+        THREE.FloatType
+      )
+
+      return { simulation, positions, positionsTexture, normalsTexture }
+    }, [])
 
   const [{ debugPointer, debugTextures, debugParticles }] = useControls(() => ({
     debugTextures: false,
@@ -61,7 +72,8 @@ export function Scene() {
     ferroMeshMaterial
   } = materials
 
-  ferroMeshMaterial.uniforms.uParticlesPositions.value = dataTexture
+  ferroMeshMaterial.uniforms.uParticlesPositions.value = positionsTexture
+  ferroMeshMaterial.uniforms.uParticlesNormals.value = normalsTexture
 
   updateFlowCamera(activeCamera as THREE.PerspectiveCamera)
 
@@ -215,6 +227,10 @@ export function Scene() {
     attractor.velocity[0] = pointerVelocity.x
     attractor.velocity[1] = pointerVelocity.z
 
+    simulation.fluid!.mousePoint[0] = smoothPointerPos.x
+    simulation.fluid!.mousePoint[1] = smoothPointerPos.y
+    simulation.fluid!.mousePoint[2] = smoothPointerPos.z
+
     if (debugPointer && pointerDebugRef.current) {
       pointerDebugRef.current.position.copy(pointerPos)
     }
@@ -228,7 +244,8 @@ export function Scene() {
       points.current.geometry.attributes.position.needsUpdate = true
     }
 
-    dataTexture.needsUpdate = true
+    positionsTexture.needsUpdate = true
+    normalsTexture.needsUpdate = true
 
     gl.setClearColor("#000")
 
@@ -359,7 +376,7 @@ export function Scene() {
         renderOrder={2}
         visible={debugPointer}
         rotation={[0, 0, 0]}
-        position={[0, 0.18, 0]}
+        position={[0, 0.22, 0]}
         {...conePointerPos}
       >
         {/* <coneGeometry args={[0.3, 0.3 * Math.sqrt(3), 10, 10]} /> */}
@@ -416,17 +433,27 @@ export function Scene() {
           depthTest={false}
           precision={"highp"}
           fragmentShader={`
+            precision highp float;
+            varying float isActive;
+
             void main() {
-              gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
+              gl_FragColor = vec4(
+                mix(vec3(1.0), vec3(1.0, 0.0, 0.0), isActive),
+                mix(0.3, 1.0, isActive)
+              );
             }
           `}
           vertexShader={`
+            precision highp float;
             attribute vec4 position;
             
             uniform mat4 projectionMatrix;
             uniform mat4 viewMatrix;
             uniform mat4 modelMatrix;
+            varying float isActive;
+
             void main() {
+              isActive = position.w;
               gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(position.xyz, 1.0);
               gl_PointSize = 3.0;
             }

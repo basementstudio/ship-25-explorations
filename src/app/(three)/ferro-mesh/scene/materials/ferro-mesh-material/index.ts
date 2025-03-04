@@ -10,7 +10,7 @@ export function createFerroMeshMaterial() {
     glslVersion: THREE.GLSL3,
     vertexShader,
     fragmentShader,
-    wireframe: true,
+    // wireframe: true,
     defines: {
       MAX_PARTICLES: maxParticles
     },
@@ -23,6 +23,9 @@ export function createFerroMeshMaterial() {
       uMainPyramidHeight: { value: 0.5 },
       uMousePosition: { value: new THREE.Vector3(0, 20, 20) },
       uParticlesPositions: {
+        value: null
+      },
+      uParticlesNormals: {
         value: null
       }
     }

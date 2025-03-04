@@ -1,4 +1,4 @@
-import { calculatePyramid } from "./materials/main-pyramid/fn"
+import { calculatePyramid, getPyramidNormal } from "./materials/main-pyramid/fn"
 
 const simHeight = 1
 const simWidth = 1
@@ -67,6 +67,8 @@ const colorsLight = {
 }
 
 const particlePosDim = 4
+const particlePosLerpDim = 4
+const particleNormalDim = 4
 
 // ----------------- start of simulator ------------------------------
 
@@ -104,6 +106,7 @@ class FlipFluid {
   // positions
   public particlePos: Float32Array
   public particlePosLerp: Float32Array
+  public particleNormal: Float32Array
 
   // colors
   public particleColor: Float32Array
@@ -166,8 +169,11 @@ class FlipFluid {
     this.particlePos = new Float32Array(particlePosDim * this.maxParticles)
     this.particlePos.fill(0.0)
 
-    this.particlePosLerp = new Float32Array(particlePosDim * this.maxParticles)
+    this.particlePosLerp = new Float32Array(particlePosLerpDim * this.maxParticles)
     this.particlePosLerp.fill(0.0)
+
+    this.particleNormal = new Float32Array(particleNormalDim * this.maxParticles)
+    this.particleNormal.fill(0.0)
 
     this.particleColor = new Float32Array(
       PARTICLE_COLOR_ATTR_COUNT * this.maxParticles
@@ -297,14 +303,17 @@ class FlipFluid {
       this.particlePos[particleIndex + 1] +=
         this.particleVel[2 * i + 1] * dt
 
-      this.calculateSmoothParticles(this.particlePos[particleIndex], this.particlePos[particleIndex + 1], particleIndex)
+      this.calculateSmoothParticles(this.particlePos[particleIndex], this.particlePos[particleIndex + 1], i)
     }
   }
 
+  // 3d point in space
+  public mousePoint: [number, number, number] = [0, 0, 0]
 
   public particlesScale = 1.2
 
-  calculateSmoothParticles(x: number, y: number, particleIndex: number) {
+  calculateSmoothParticles(x: number, y: number, i: number) {
+    const particleIndex = i * particlePosLerpDim
     const remapedX = x * this.particlesScale - this.particlesScale / 2
     const remapedY = y * this.particlesScale - this.particlesScale / 2
     // lerp x,z
@@ -312,6 +321,20 @@ class FlipFluid {
     this.particlePosLerp[particleIndex + 2] = lerp(this.particlePosLerp[particleIndex + 2], remapedY, 0.1)
     // update y
     this.particlePosLerp[particleIndex + 1] = calculatePyramid(this.particlePosLerp[particleIndex], this.particlePosLerp[particleIndex + 2])
+
+    // alpha: is active
+    const distToMouse = Math.hypot(
+      this.particlePosLerp[particleIndex] - this.mousePoint[0],
+      this.particlePosLerp[particleIndex + 1] - this.mousePoint[1],
+      this.particlePosLerp[particleIndex + 2] - this.mousePoint[2]
+    )
+    this.particlePosLerp[particleIndex + 3] = 1 - clamp(distToMouse * 3, 0.0, 1.0)
+
+
+    this.particleNormal.set(
+      getPyramidNormal(this.particlePosLerp[particleIndex], this.particlePosLerp[particleIndex + 2], this.particlePosLerp[particleIndex + 1]),
+      i * particleNormalDim
+    )
   }
 
   pushParticlesApart(numIters: number): void {
@@ -872,7 +895,7 @@ interface SetupSceneOptions {
 }
 
 const numX = 2 * 2 * 2 * 2
-const numY = 2 * 2 * 2
+const numY = 2 * 2 * 2 * 2
 export const maxParticles = numX * numY
 
 export function setupScene({ isDarkMode }: SetupSceneOptions): typeof scene {
@@ -883,7 +906,7 @@ export function setupScene({ isDarkMode }: SetupSceneOptions): typeof scene {
   scene.numPressureIters = 50
   scene.numParticleIters = 2
 
-  const res = 25
+  const res = 35
 
   const tankHeight = Number(simHeight)
   const tankWidth = Number(simWidth)
@@ -894,7 +917,7 @@ export function setupScene({ isDarkMode }: SetupSceneOptions): typeof scene {
 
   // compute number of particles
 
-  const r = 1.9 * h // particle radius w.r.t. cell size
+  const r = 2.9 * h // particle radius w.r.t. cell size
 
   scene.numX = numX
   scene.numY = numY

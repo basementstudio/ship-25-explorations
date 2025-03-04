@@ -14,6 +14,7 @@
 
 uniform vec3 uMousePosition;
 uniform sampler2D uParticlesPositions;
+uniform sampler2D uParticlesNormals;
 
 vec4 textureGood(sampler2D sam, vec2 uv) {
   vec2 texelSize = vec2(1.0) / vec2(textureSize(sam, 0));
@@ -141,34 +142,46 @@ ivec2 getSampleCoord(const sampler2D mapSampler, const float batchId) {
 
 const int numPyramids = 60;
 
+vec3 particlePyramid(
+  vec3 p,
+  vec3 pBase,
+  vec3 particlepos,
+  vec3 particleNormal,
+  float size
+) {
+  float displacedH = distance(p, pBase);
+
+  float distToParticle = length(pBase - particlepos) * 40.0;
+  float particleFactor = 1.0 - clamp(distToParticle, 0.0, 1.0);
+
+  float desiredDisplacement = particleFactor * 0.07 * size;
+
+  p += particleNormal * max(0.0, desiredDisplacement - displacedH);
+
+  return p;
+}
+
 vec3 addParticles(vec3 pBase) {
   vec3 p = pBase;
   for (int i = 0; i < MAX_PARTICLES; i++) {
     ivec2 coord = getSampleCoord(uParticlesPositions, float(i));
-    vec3 particlepos = texelFetch(uParticlesPositions, coord, 0).xyz;
+    vec4 particleSample = texelFetch(uParticlesPositions, coord, 0);
+    vec3 particleNormal = texelFetch(uParticlesNormals, coord, 0).xyz;
 
-    particlepos.y = pBase.y;
+    // particleNormal.y *= -1.0;
 
-    float distToParticle = length(p - particlepos);
+    vec3 particlepos = particleSample.xyz;
 
-    float size = valueRemap(distToParticle, 0.0, 1.0, 0.1, 0.0);
-
-    float distToMouse = length(particlepos - uMousePosition) - 0.06;
-
-    distToMouse *= 5.0;
-
-    float distToMouseClamped = 1.0 - clamp(distToMouse, 0.0, 1.0);
-
-    distToMouseClamped = pow(distToMouseClamped, 2.0);
-
-    p = pyramid(
+    p = particlePyramid(
       p,
-      particlepos,
       pBase,
-      size * distToMouseClamped * 0.5,
-      size * distToMouseClamped * 0.8
+      particlepos,
+      particleNormal.xzy,
+      1.0
+      // particleSample.w
     );
-    // p = pyramid(p, particlepos, pBase, 0.05, 0.1);
+    // if (particleSample.w > 0.0) {
+    // }
   }
 
   return p;
@@ -179,7 +192,7 @@ vec3 displacement(vec3 p) {
 
   if (distToCenter < 0.55) {
     p.y = calculatePyramid(p.x, p.z);
-    // p = addParticles(p);
+    p = addParticles(p);
   }
 
   float n = snoise2(p.xz * 10.0 + vec2(0.0, -uTime)) * 0.005;
