@@ -332,7 +332,7 @@ class FlipFluid {
     // disable particles when on the ground
     const particleHFactor = clamp(this.particlePosLerp[particleIndex + 1] * 20, 0.0, 1.0)
 
-    let activeFactror = (1 - clamp(distToMouse * 10 - 0.3, 0.0, 1.0)) * particleHFactor
+    let activeFactror = (1 - clamp(distToMouse * 10 - 0.3, 0.0, 1.0))
     activeFactror = Math.pow(activeFactror, 0.5)
 
     this.particlePosLerp[particleIndex + 3] = lerp(this.particlePosLerp[particleIndex + 3], activeFactror, 0.3)

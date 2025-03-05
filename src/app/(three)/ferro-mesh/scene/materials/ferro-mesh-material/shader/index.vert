@@ -39,7 +39,7 @@ vec2 squareToCircle(vec2 p) {
 }
 
 vec3 initialRemap(vec3 p) {
-  p = gain(p, 0.1);
+  p = gain(p, 0.2);
   p.xy -= vec2(0.5);
   p *= 2.0;
   return p;
