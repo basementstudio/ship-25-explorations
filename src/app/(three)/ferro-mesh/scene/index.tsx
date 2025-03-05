@@ -18,9 +18,10 @@ import { DebugTextures } from "./debug-textures"
 import { Atractor, setupScene, simulate } from "./fluid-sim"
 import { useAssets } from "./use-assets"
 import { DoubleFBO } from "./use-double-fbo"
-import { LerpedMouse, useLerpMouse } from "./use-lerp-mouse"
+import { LerpedMouse } from "./use-lerp-mouse"
 import { useMaterials } from "./use-materials"
 import { useTargets } from "./use-targets"
+import { Env } from "./env"
 
 export function Scene() {
   const activeCamera = useThree((state) => state.camera)
@@ -236,8 +237,38 @@ export function Scene() {
     }
   })
 
+  // update environment
+  useFrame(({ scene }) => {
+    const env = scene.environment
+    if (!env) return
+    const currentEnv = ferroMeshMaterial.uniforms.envMap.value
+    if (currentEnv !== env) {
+      console.log(env)
+
+      ferroMeshMaterial.uniforms.envMap.value = env
+      const rotation = ferroMeshMaterial.uniforms.envMapRotation
+        .value as THREE.Matrix3
+
+      const _e1 = /*@__PURE__*/ new THREE.Euler()
+      const _m1 = /*@__PURE__*/ new THREE.Matrix4()
+
+      _e1.copy(scene.environmentRotation)
+
+      // accommodate left-handed frame
+      _e1.x *= -1
+      _e1.y *= -1
+      _e1.z *= -1
+
+      _e1.y *= -1
+      _e1.z *= -1
+
+      rotation.setFromMatrix4(_m1.makeRotationFromEuler(_e1))
+    }
+  })
+
   // Update flow simulation
   useFrame(({ gl, scene, clock }, delta) => {
+    // console.log(mainScene.environment)
     simulate(delta, attractor)
 
     if (points.current && debugParticles) {
@@ -413,6 +444,11 @@ export function Scene() {
         <primitive object={ferroMeshMaterial} />
       </mesh>
 
+      {/* <mesh position={[0.4, 0, 0]}>
+        <coneGeometry args={[0.6, 0.9, 30, 30]} />
+        <meshStandardMaterial roughness={0} color="black" />
+      </mesh> */}
+
       {/* points debug */}
       <points
         visible={debugParticles}
@@ -462,6 +498,15 @@ export function Scene() {
       </points>
 
       <Cameras />
+
+      <Env />
+
+      {/* <mesh
+        position={[0.5, 0.5, 0.5]}
+      >
+        <sphereGeometry args={[0.1, 32, 32]} />
+        <meshStandardMaterial color="black" roughness={0} />
+      </mesh> */}
 
       {/* Display textures */}
       {debugTextures && (

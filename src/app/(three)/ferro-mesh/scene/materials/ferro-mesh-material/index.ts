@@ -27,6 +27,12 @@ export function createFerroMeshMaterial() {
       },
       uParticlesNormals: {
         value: null
+      },
+      envMap: {
+        value: null
+      },
+      envMapRotation: {
+        value: new THREE.Matrix3()
       }
     }
   })

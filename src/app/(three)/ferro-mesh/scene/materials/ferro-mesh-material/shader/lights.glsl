@@ -1,6 +1,9 @@
 uniform sampler2D uEnvMap;
 uniform sampler2D uEnvMap2;
 
+uniform samplerCube envMap;
+uniform mat3 envMapRotation;
+
 #pragma glslify: valueRemap = require('../../glsl-shared/value-remap.glsl')
 
 vec2 normalToEnvUv(vec3 normal) {
@@ -75,9 +78,15 @@ vec3 getEnv2(vec2 uv) {
   return envSample;
 }
 
+vec3 getEnv3(vec3 normal) {
+  vec4 envColor = texture(envMap, envMapRotation * normal);
+
+  return envColor.rgb;
+}
+
 vec2 textureScale = vec2(1.0, 1.0);
 
-vec3 ambientLightDir = normalize(vec3(0.0, 0.7, 1.0));
+vec3 ambientLightDir = normalize(vec3(0.0, -0.7, 0.4));
 float ambientLightIntensity = 0.1;
 
 float getFresnel(
@@ -94,8 +103,8 @@ float getFresnel(
 }
 
 vec4 getLights(vec3 normal, vec3 cameraPosition, vec3 worldPosition) {
-  vec3 viewDir = normalize(cameraPosition - worldPosition);
-  vec3 reflectedNormal = reflect(viewDir, normal);
+  vec3 cameraToVertex = normalize(worldPosition - cameraPosition);
+  vec3 reflectedNormal = reflect(cameraToVertex, normal);
 
   vec2 envUv = normalToEnvUv(reflectedNormal);
 
@@ -104,12 +113,12 @@ vec4 getLights(vec3 normal, vec3 cameraPosition, vec3 worldPosition) {
   float lightAmbient = dot(normal, ambientLightDir) * ambientLightIntensity;
   lightAmbient = clamp(lightAmbient, 0.0, 1.0);
 
-  col += lightAmbient;
+  col -= lightAmbient;
 
-  vec3 env = getEnv2(envUv);
-  float fresnel = getFresnel(normal, viewDir, 0.1, 0.2);
+  vec3 env = getEnv3(reflectedNormal);
+  float fresnel = getFresnel(normal, cameraToVertex, 0.1, 0.2);
 
-  env *= fresnel;
+  // env *= fresnel;
 
   col += env;
 
@@ -129,7 +138,13 @@ vec4 getLights(vec3 normal, vec3 cameraPosition, vec3 worldPosition) {
   }
 
   // return vec4(col, alpha);
-  return vec4(vec3(fresnel) * 0.2 * alphaMultiplier + col, 1.0);
+
+  float debug = normal.y;
+
+  // return vec4(vec3(cameraToVertex), 1.0);
+  // return vec4(vec3(fresnel) * 0.2 * alphaMultiplier + col, 1.0);
+
+  return vec4(col, 1.0);
 }
 
 #pragma glslify: export(getLights)

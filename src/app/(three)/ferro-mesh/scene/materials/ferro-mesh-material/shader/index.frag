@@ -14,30 +14,33 @@ in vec3 vNormal;
 
 #pragma glslify: getLights = require('./lights.glsl', texture = texture, textureSize = textureSize, worldPosition = worldPosition, textureLod = textureLod)
 
-vec3 calculateNormal(vec3 pOrigin) {
+vec3 calculateNormal(vec3 pOrigin, vec3 worldPos) {
   // Define a small step size
-  float epsilon = 0.01;
+  float epsilon = 0.005;
 
   // Sample the displacement at slightly offset positions
   vec3 offsetX = vec3(epsilon, 0.0, 0.0);
+  vec3 offsetY = vec3(0.0, epsilon, 0.0);
   vec3 offsetZ = vec3(0.0, 0.0, epsilon);
 
-  float heightCenter = displacement(pOrigin).y;
-  float heightX = displacement(pOrigin + offsetX).y;
-  float heightZ = displacement(pOrigin + offsetZ).y;
+  // Get full displacement vectors
 
-  // Calculate the normal using finite differences
-  vec3 normal = normalize(
-    vec3(heightX - heightCenter, epsilon, heightZ - heightCenter)
-  );
+  vec3 displacedX = displacement(pOrigin + offsetX);
+  vec3 displacedZ = displacement(pOrigin + offsetZ);
 
-  return normal;
+  // Calculate tangent vectors
+  vec3 tangentX = displacedX - worldPos;
+  vec3 tangentZ = displacedZ - worldPos;
+
+  // Cross product of tangent vectors gives the normal
+  return -normalize(cross(tangentX, tangentZ));
 }
 
 void main() {
-  vec3 normal = calculateNormal(pOrigin);
+  vec3 worldPos = displacement(pOrigin);
+  vec3 normal = calculateNormal(pOrigin, worldPos);
 
-  vec4 color = getLights(normal, cameraPosition, worldPosition);
+  vec4 color = getLights(normal, cameraPosition, worldPos);
 
   // Output the color
   fragColor = color;
