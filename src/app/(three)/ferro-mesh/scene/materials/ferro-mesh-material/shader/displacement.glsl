@@ -196,10 +196,10 @@ vec3 displacement(vec3 p) {
     p = addParticles(p);
   }
 
-  float n = snoise2(p.xz * 10.0 + vec2(0.0, -uTime)) * 0.005;
+  float n = snoise2(p.xz * 10.0 + vec2(0.0, -uTime)) * 0.003;
 
   // add noise
-  // p.y += n * clamp(1.0 - p.y * 10.0, 0.0, 1.0);
+  p.y += n * clamp(1.0 - p.y * 20.0, 0.0, 1.0);
 
   return p;
 }
