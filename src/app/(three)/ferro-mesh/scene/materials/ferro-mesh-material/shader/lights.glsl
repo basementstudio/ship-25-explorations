@@ -87,7 +87,7 @@ vec3 getEnv3(vec3 normal) {
 vec2 textureScale = vec2(1.0, 1.0);
 
 vec3 ambientLightDir = normalize(vec3(0.0, -0.7, 0.4));
-float ambientLightIntensity = 0.1;
+float ambientLightIntensity = 0.4;
 
 float getFresnel(
   vec3 normal,

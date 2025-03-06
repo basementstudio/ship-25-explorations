@@ -141,28 +141,39 @@ ivec2 getSampleCoord(const sampler2D mapSampler, const float batchId) {
 }
 
 float pyramidRadScale = 30.0;
-float pyramidHeightScale = 0.07;
+float pyramidHeightScale = 0.1;
 
 vec3 particlePyramid(
   vec3 p,
   vec3 pBase,
   vec3 particlepos,
   vec3 particleNormal,
-  float size
+  float size,
+  float noise
 ) {
   float displacedH = distance(p, pBase);
 
   float distToParticle = length(pBase - particlepos) * pyramidRadScale;
+  /**
+ * 0-1 the closer the particle center, the higher the factor
+ */
   float particleFactor = 1.0 - clamp(distToParticle, 0.0, 1.0);
+  float particleFactor2 = 1.0 - clamp(distToParticle * 0.8, 0.0, 1.0);
 
-  float desiredDisplacement = particleFactor * pyramidHeightScale * size;
+  float smoothParticleFactor = noise * smoothstep(0.0, 0.9, particleFactor2);
+  // float smoothParticleFactor = noise * particleFactor;
+
+  float pyramidDisplacement = mix(smoothParticleFactor, particleFactor, size);
+
+  float desiredDisplacement = pyramidDisplacement * pyramidHeightScale * size;
 
   p += particleNormal * max(0.0, desiredDisplacement - displacedH);
 
   return p;
 }
 
-vec3 addParticles(vec3 pBase) {
+vec3 addParticles(vec3 pBase, float noise) {
+  float n = noise * 0.5 + 0.5;
   vec3 p = pBase;
   for (int i = 0; i < MAX_PARTICLES; i++) {
     ivec2 coord = getSampleCoord(uParticlesPositions, float(i));
@@ -173,14 +184,14 @@ vec3 addParticles(vec3 pBase) {
 
     vec3 particlepos = particleSample.xyz;
 
-    if (particleSample.w > 0.0) {
+    if (particleSample.w > 0.0001) {
       p = particlePyramid(
         p,
         pBase,
         particlepos,
         particleNormal.xyz,
-        // 1.0
-        particleSample.w
+        particleSample.w,
+        n
       );
     }
   }
@@ -190,16 +201,15 @@ vec3 addParticles(vec3 pBase) {
 
 vec3 displacement(vec3 p) {
   float distToCenter = length(p);
+  float n = snoise2(p.xz * 10.0 + vec2(0.0, -uTime));
 
   if (distToCenter < 0.55) {
     p.y = calculatePyramid(p.x, p.z);
-    p = addParticles(p);
+    p = addParticles(p, n);
   }
 
-  float n = snoise2(p.xz * 10.0 + vec2(0.0, -uTime)) * 0.003;
-
   // add noise
-  p.y += n * clamp(1.0 - p.y * 20.0, 0.0, 1.0);
+  p.y += n * 0.003 * clamp(1.0 - p.y * 20.0, 0.0, 1.0);
 
   return p;
 }
