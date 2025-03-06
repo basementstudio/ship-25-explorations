@@ -201,15 +201,20 @@ vec3 addParticles(vec3 pBase, float noise) {
 
 vec3 displacement(vec3 p) {
   float distToCenter = length(p);
-  float n = snoise2(p.xz * 10.0 + vec2(0.0, -uTime));
+  float n = snoise2(p.xz * 10.0 + vec2(0.0, -uTime * 0.5));
 
   if (distToCenter < 0.55) {
     p.y = calculatePyramid(p.x, p.z);
     p = addParticles(p, n);
   }
 
+  float noiseMultiplier = clamp(1.0 - p.y * 20.0, 0.5, 1.0);
+
   // add noise
-  p.y += n * 0.003 * clamp(1.0 - p.y * 20.0, 0.0, 1.0);
+  p.y += n * 0.003 * noiseMultiplier;
+
+  float n2 = snoise2(p.xz * 30.31114 + vec2(0.0, -uTime * 1.0));
+  p.y += n2 * 0.0005 * noiseMultiplier;
 
   return p;
 }

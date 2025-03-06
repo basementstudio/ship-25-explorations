@@ -131,6 +131,8 @@ vec4 getLights(vec3 normal, vec3 cameraPosition, vec3 worldPosition) {
     1.0
   );
 
+  alphaMultiplier *= clamp(1.0 - length(worldPosition.xz) * 0.5, 0.0, 1.0);
+
   if (worldPosition.z > 0.0) {
     col *= alphaMultiplier;
   } else {

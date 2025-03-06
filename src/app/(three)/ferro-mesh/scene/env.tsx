@@ -108,7 +108,7 @@ function Room({ highlight }: { highlight: string }) {
         light={{ intensity: 100, distance: 8, decay: 2 }}
       /> */}
 
-      <pointLight intensity={8} decay={0.4} position={[14, 12.0, -10.0]} />
+      <pointLight intensity={4} decay={0.4} position={[14, 12.0, -10.0]} />
       <pointLight intensity={200} decay={2} position={[2, 12.0, -12.0]} />
       {/* <Lightformer
         form="box"
