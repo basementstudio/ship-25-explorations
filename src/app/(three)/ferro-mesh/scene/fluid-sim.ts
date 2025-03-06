@@ -1,3 +1,4 @@
+import { Vector3 } from "three"
 import { calculatePyramid, getPyramidNormal } from "./materials/main-pyramid/fn"
 
 const simHeight = 1
@@ -318,6 +319,9 @@ class FlipFluid {
     return Math.hypot((a[0] - b[0]) * scale[0], (a[1] - b[1]) * scale[1], (a[2] - b[2]) * scale[2])
   }
 
+  public pointAPos: [number, number, number] | null = null
+  public enableMouse = false
+
   calculateSmoothParticles(x: number, y: number, i: number) {
     const particleIndex = i * particlePosLerpDim
     const remapedX = x * this.particlesScale - this.particlesScale / 2
@@ -333,30 +337,29 @@ class FlipFluid {
     // alpha: is active
     const distToMouse = this.distanceToPoint(currentPos, this.mousePoint)
 
-    // add two static points
-    const pointA = [0., 0.1, 0.3] as [number, number, number]
-    const distToPointA = this.distanceToPoint(currentPos, pointA, [0.2, 1, 0.5])
+    let pointAFactor = 0
 
-    let pointAFactor = (1 - clamp(distToPointA * 10 / this.autoParticles, 0.0, 1.0))
-    pointAFactor = Math.pow(pointAFactor, 0.2)
-    pointAFactor = clamp(pointAFactor, 0.0, 0.7)
+    if (this.pointAPos) {
+      // add two static points
+      const distToPointA = this.distanceToPoint(currentPos, this.pointAPos, [0.2, 1, 0.5])
 
-    // const pointB = [-0.2, 0., 0.4] as [number, number, number]
-    // const distToPointB = this.distanceToPoint(currentPos, pointB)
-    // const distToPointA = 0.3 - currentPos[2]
+      pointAFactor = (1 - clamp(distToPointA * 10 / this.autoParticles, 0.0, 1.0))
+      pointAFactor = Math.pow(pointAFactor, 0.2)
+      pointAFactor = clamp(pointAFactor, 0.0, 0.7)
+    }
+
 
     // disable particles when on the ground
     const particleHFactor = clamp(this.particlePosLerp[particleIndex + 1] * 40, 0.0, 1.0)
 
-    const scale = 10
-    const rad = 0.1
+    let mouseFactor = 0
 
-
-    const currentActiveFactor = this.particlePosLerp[particleIndex + 3]
-
-    let mouseFactor = (1 - clamp(distToMouse * scale - rad, 0.0, 1.0))
-    mouseFactor = Math.pow(mouseFactor, 0.5)
-
+    if (this.enableMouse) {
+      const scale = 10
+      const rad = 0.1
+      mouseFactor = (1 - clamp(distToMouse * scale - rad, 0.0, 1.0))
+      mouseFactor = Math.pow(mouseFactor, 0.5)
+    }
 
     let activeFactor = Math.max(mouseFactor, pointAFactor)
 

@@ -220,6 +220,11 @@ export function Scene() {
   const staticPeaks = motionValue(0)
 
   useEffect(() => {
+    const pointAFrom = new THREE.Vector3(0, 0.1, 0.3)
+    const pointATo = new THREE.Vector3(0, 0.0, 0.5)
+
+    const tmb = new THREE.Vector3()
+
     animate(pyramidReveal, 1, {
       duration: 3,
       delay: 2,
@@ -227,6 +232,24 @@ export function Scene() {
       onUpdate: () => {
         ferroMeshMaterial.uniforms.uMainPyramidHeight.value =
           pyramidReveal.get()
+      },
+      onComplete: () => {
+        fluid.enableMouse = true
+      }
+    })
+
+    animate(0, 1, {
+      duration: 1.8,
+      delay: 3.3,
+      ease: "easeInOut",
+      onUpdate: (latest) => {
+        tmb.lerpVectors(pointAFrom, pointATo, latest)
+        if (!fluid.pointAPos) {
+          fluid.pointAPos = tmb.toArray()
+        }
+        fluid.pointAPos[0] = tmb.x
+        fluid.pointAPos[1] = tmb.y
+        fluid.pointAPos[2] = tmb.z
       }
     })
 
@@ -239,9 +262,9 @@ export function Scene() {
       },
       onComplete: () => {
         animate(staticPeaks, 0, {
-          duration: 2,
-          delay: 1.5,
-          ease: "circInOut",
+          duration: 1.5,
+          delay: 2.3,
+          ease: "linear",
           onUpdate: () => {
             fluid.autoParticles = staticPeaks.get()
           }
