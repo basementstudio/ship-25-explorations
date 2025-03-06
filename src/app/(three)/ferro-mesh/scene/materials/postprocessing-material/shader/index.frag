@@ -10,15 +10,24 @@ uniform int bloomSamples; // Number of samples (default: 16)
 in vec2 vUv;
 out vec4 fragColor;
 
+// Pseudo-random function based on UV coordinates
 float random(vec2 st) {
   return fract(sin(dot(st.xy, vec2(12.9898, 78.233))) * 43758.5453123);
 }
 
+// Second random function with different seed values
+float random2(vec2 st) {
+  return fract(sin(dot(st.xy, vec2(78.233, 19.8745))) * 35794.351);
+}
+
 // Function to determine if a pixel is bright enough for bloom
 vec3 extractBrightness(vec3 color) {
-  float brightness = max(color.r, max(color.g, color.b));
-  return brightness > bloomThreshold
-    ? color * (brightness - bloomThreshold)
+  // Perceptual luminance calculation (standard Rec. 709 coefficients)
+  float luminance = dot(color, vec3(0.2126, 0.7152, 0.0722));
+
+  // Apply threshold and scale
+  return luminance > bloomThreshold
+    ? color * (luminance - bloomThreshold)
     : vec3(0.0);
 }
 
@@ -50,7 +59,13 @@ vec3 sampleBloom(vec2 uv, float radius) {
   for (int i = 0; i < bloomSamples; i++) {
     float angle = float(i) * GOLDEN_ANGLE + pixelRandomRotation;
     float r = sqrt(float(i)) / sqrt(float(bloomSamples));
-    vec2 offset = vec2(cos(angle), sin(angle)) * r * radius * pixelSize;
+
+    // Generate a random radius variation between 0.5 and 1.0 of the original radius
+    float radiusVariation =
+      0.5 + 0.5 * random2(uv + vec2(float(i) * 0.1, pixelRandomRotation));
+    float variedRadius = radius * radiusVariation;
+
+    vec2 offset = vec2(cos(angle), sin(angle)) * r * variedRadius * pixelSize;
 
     // Calculate Gaussian weight based on distance from center
     float distance = length(offset) / (radius * pixelSize.x);

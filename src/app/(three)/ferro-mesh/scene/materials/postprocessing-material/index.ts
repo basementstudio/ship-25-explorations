@@ -13,8 +13,8 @@ export function createPostprocessingMaterial() {
       baseMap: { value: null },
       bloomThreshold: { value: 50.0 },
       bloomIntensity: { value: .001 },
-      bloomRadius: { value: 10. },
-      bloomSamples: { value: 16 }
+      bloomRadius: { value: 15. },
+      bloomSamples: { value: 64 }
     }
   })
 } 
