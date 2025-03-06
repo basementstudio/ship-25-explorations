@@ -1,4 +1,4 @@
-import { Environment, Lightformer } from "@react-three/drei"
+import { Environment, GradientTexture, Lightformer } from "@react-three/drei"
 import { useThree } from "@react-three/fiber"
 import * as THREE from "three"
 import { mainCamera } from "./cameras"
@@ -92,13 +92,47 @@ function Room({ highlight }: { highlight: string }) {
         scale={[3.875, 3.487, 2.986]}
       />
 
+      {/* <Lightformer
+        form="box"
+        intensity={80}
+        position={[-14.0, 14.0, -12.0]}
+        scale={[0.1, 40.5, 10.5]}
+        target={false}
+      /> */}
+
       <Lightformer
         form="box"
         intensity={80}
-        position={[-14.0, 14.0, -4.0]}
-        scale={[0.1, 10.5, 5.5]}
+        position={[-15.0, 14.0, -12.0]}
+        scale={[0.1, 10.5, 10.5]}
+        rotation={[0, Math.PI * -0.3, 0]}
         target={false}
       />
+
+      <Lightformer
+        form="box"
+        intensity={10}
+        position={[10.0, 14.0, -12.0]}
+        scale={[0.1, 10.5, 10.5]}
+        rotation={[0, Math.PI * 0.5, 0]}
+        target={false}
+      />
+      {/* 
+      <mesh
+        position={[14.0, 14.0, -10.0]}
+        scale={[1, 1, 1]}
+        rotation={[0, Math.PI * -0.5, 0]}
+      >
+        <planeGeometry args={[10, 10]} />
+        <meshBasicMaterial>
+          <GradientTexture
+            stops={[0.3, 0.7]} // As many stops as you want
+            colors={["white", "#313131"]} // Colors need to match the number of stops
+            size={1024} // Size is optional, default = 1024
+          />
+        </meshBasicMaterial>
+      </mesh> */}
+
       {/* <Lightformer
         form="box"
         intensity={23}
@@ -108,7 +142,7 @@ function Room({ highlight }: { highlight: string }) {
         light={{ intensity: 100, distance: 8, decay: 2 }}
       /> */}
 
-      <pointLight intensity={4} decay={0.4} position={[14, 12.0, -10.0]} />
+      <pointLight intensity={7} decay={0.4} position={[14, 12.0, -10.0]} />
       <pointLight intensity={200} decay={2} position={[2, 12.0, -12.0]} />
       {/* <Lightformer
         form="box"

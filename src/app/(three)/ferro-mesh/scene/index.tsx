@@ -21,10 +21,12 @@ import { useMaterials } from "./use-materials"
 import { useTargets } from "./use-targets"
 import { Env } from "./env"
 
+import { motionValue, animate } from "motion"
+
 export function Scene() {
   const activeCamera = useCameraStore((state) => state.camera)
 
-  const { simulation, positions, positionsTexture, normalsTexture } =
+  const { simulation, positions, positionsTexture, normalsTexture, fluid } =
     useMemo(() => {
       const simulation = setupScene({ isDarkMode: false })
 
@@ -50,7 +52,7 @@ export function Scene() {
         THREE.FloatType
       )
 
-      return { simulation, positions, positionsTexture, normalsTexture }
+      return { simulation, positions, positionsTexture, normalsTexture, fluid }
     }, [])
 
   const [{ debugPointer, debugTextures, debugParticles }] = useControls(() => ({
@@ -214,6 +216,40 @@ export function Scene() {
     }
   })
 
+  const pyramidReveal = motionValue(0)
+  const staticPeaks = motionValue(0)
+
+  useEffect(() => {
+    animate(pyramidReveal, 1, {
+      duration: 3,
+      delay: 2,
+      ease: "circInOut",
+      onUpdate: () => {
+        ferroMeshMaterial.uniforms.uMainPyramidHeight.value =
+          pyramidReveal.get()
+      }
+    })
+
+    animate(staticPeaks, 1, {
+      duration: 1,
+      delay: 0.5,
+      ease: "circInOut",
+      onUpdate: () => {
+        fluid.autoParticles = staticPeaks.get()
+      },
+      onComplete: () => {
+        animate(staticPeaks, 0, {
+          duration: 2,
+          delay: 1.5,
+          ease: "circInOut",
+          onUpdate: () => {
+            fluid.autoParticles = staticPeaks.get()
+          }
+        })
+      }
+    })
+  }, [])
+
   // Update flow simulation
   useFrame(({ gl, clock }, delta) => {
     simulate(delta, attractor)
@@ -235,45 +271,45 @@ export function Scene() {
 
     vActiveFast.current = lerp(vActiveFast.current, activeFactor, 10 * delta)
 
-    ferroMeshMaterial.uniforms.uDiskRadius.value = valueRemap(
-      vActive.current,
-      0,
-      1,
-      0.35,
-      0.5
-    )
+    // ferroMeshMaterial.uniforms.uDiskRadius.value = valueRemap(
+    //   vActive.current,
+    //   0,
+    //   1,
+    //   0.35,
+    //   0.5
+    // )
 
-    ferroMeshMaterial.uniforms.uHeightMax.value = valueRemap(
-      vActive.current,
-      0,
-      1,
-      0.3,
-      0.05
-    )
+    // ferroMeshMaterial.uniforms.uHeightMax.value = valueRemap(
+    //   vActive.current,
+    //   0,
+    //   1,
+    //   0.3,
+    //   0.05
+    // )
 
-    ferroMeshMaterial.uniforms.uHeightMin.value = valueRemap(
-      vActive.current,
-      0,
-      1,
-      0.15,
-      0
-    )
+    // ferroMeshMaterial.uniforms.uHeightMin.value = valueRemap(
+    //   vActive.current,
+    //   0,
+    //   1,
+    //   0.15,
+    //   0
+    // )
 
-    ferroMeshMaterial.uniforms.uMainPyramidRadius.value = valueRemap(
-      vActiveFast.current,
-      0,
-      1,
-      0.35,
-      0.35
-    )
+    // ferroMeshMaterial.uniforms.uMainPyramidRadius.value = valueRemap(
+    //   vActiveFast.current,
+    //   0,
+    //   1,
+    //   0.35,
+    //   0.35
+    // )
 
-    ferroMeshMaterial.uniforms.uMainPyramidHeight.value = valueRemap(
-      vActiveFast.current,
-      0,
-      1,
-      0.55,
-      0.55
-    )
+    // ferroMeshMaterial.uniforms.uMainPyramidHeight.value = valueRemap(
+    //   vActiveFast.current,
+    //   0,
+    //   1,
+    //   0.55,
+    //   0.55
+    // )
 
     ferroMeshMaterial.uniforms.uTime.value = clock.getElapsedTime()
 

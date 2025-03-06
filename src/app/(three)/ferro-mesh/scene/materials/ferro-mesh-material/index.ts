@@ -20,7 +20,7 @@ export function createFerroMeshMaterial() {
       uHeightMax: { value: 0.4 },
       uHeightMin: { value: 0.15 },
       uMainPyramidRadius: { value: 0.6 },
-      uMainPyramidHeight: { value: 0.5 },
+      uMainPyramidHeight: { value: 0. },
       uMousePosition: { value: new THREE.Vector3(0, 20, 20) },
       uParticlesPositions: {
         value: null

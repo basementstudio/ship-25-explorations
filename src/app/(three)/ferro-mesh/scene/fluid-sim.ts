@@ -312,6 +312,12 @@ class FlipFluid {
 
   public particlesScale = 1.2
 
+  public autoParticles = 0;
+
+  private distanceToPoint = (a: [number, number, number], b: [number, number, number], scale: [number, number, number] = [1, 1, 1]) => {
+    return Math.hypot((a[0] - b[0]) * scale[0], (a[1] - b[1]) * scale[1], (a[2] - b[2]) * scale[2])
+  }
+
   calculateSmoothParticles(x: number, y: number, i: number) {
     const particleIndex = i * particlePosLerpDim
     const remapedX = x * this.particlesScale - this.particlesScale / 2
@@ -322,29 +328,52 @@ class FlipFluid {
     // update y
     this.particlePosLerp[particleIndex + 1] = calculatePyramid(this.particlePosLerp[particleIndex], this.particlePosLerp[particleIndex + 2])
 
+    const currentPos = [this.particlePosLerp[particleIndex], this.particlePosLerp[particleIndex + 1], this.particlePosLerp[particleIndex + 2]] as [number, number, number]
+
     // alpha: is active
-    const distToMouse = Math.hypot(
-      this.particlePosLerp[particleIndex] - this.mousePoint[0],
-      this.particlePosLerp[particleIndex + 1] - this.mousePoint[1],
-      this.particlePosLerp[particleIndex + 2] - this.mousePoint[2]
-    )
+    const distToMouse = this.distanceToPoint(currentPos, this.mousePoint)
+
+    // add two static points
+    const pointA = [0., 0.1, 0.3] as [number, number, number]
+    const distToPointA = this.distanceToPoint(currentPos, pointA, [0.2, 1, 0.5])
+
+    let pointAFactor = (1 - clamp(distToPointA * 10 / this.autoParticles, 0.0, 1.0))
+    pointAFactor = Math.pow(pointAFactor, 0.2)
+    pointAFactor = clamp(pointAFactor, 0.0, 0.7)
+
+    // const pointB = [-0.2, 0., 0.4] as [number, number, number]
+    // const distToPointB = this.distanceToPoint(currentPos, pointB)
+    // const distToPointA = 0.3 - currentPos[2]
 
     // disable particles when on the ground
-    // const particleHFactor = clamp(this.particlePosLerp[particleIndex + 1] * 20, 0.0, 1.0)
+    const particleHFactor = clamp(this.particlePosLerp[particleIndex + 1] * 40, 0.0, 1.0)
 
     const scale = 10
     const rad = 0.1
 
-    let activeFactror = (1 - clamp(distToMouse * scale - rad, 0.0, 1.0))
-    activeFactror = Math.pow(activeFactror, 0.5)
 
-    this.particlePosLerp[particleIndex + 3] = lerp(this.particlePosLerp[particleIndex + 3], activeFactror, 0.1)
+    const currentActiveFactor = this.particlePosLerp[particleIndex + 3]
+
+    let mouseFactor = (1 - clamp(distToMouse * scale - rad, 0.0, 1.0))
+    mouseFactor = Math.pow(mouseFactor, 0.5)
+
+
+    let activeFactor = Math.max(mouseFactor, pointAFactor)
+
+
+
+
+    this.particlePosLerp[particleIndex + 3] = lerp(this.particlePosLerp[particleIndex + 3], activeFactor, 0.1)
 
 
     this.particleNormal.set(
       getPyramidNormal(this.particlePosLerp[particleIndex], this.particlePosLerp[particleIndex + 2], this.particlePosLerp[particleIndex + 1]),
       i * particleNormalDim
     )
+
+
+
+
   }
 
   pushParticlesApart(numIters: number): void {

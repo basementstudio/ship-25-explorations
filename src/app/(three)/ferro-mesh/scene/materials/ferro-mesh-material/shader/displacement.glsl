@@ -204,7 +204,7 @@ vec3 displacement(vec3 p) {
   float n = snoise2(p.xz * 10.0 + vec2(0.0, -uTime * 0.5));
 
   if (distToCenter < 0.55) {
-    p.y = calculatePyramid(p.x, p.z);
+    p.y = calculatePyramid(p.x, p.z) * uMainPyramidHeight;
     p = addParticles(p, n);
   }
 
