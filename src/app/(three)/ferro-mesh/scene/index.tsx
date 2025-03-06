@@ -12,19 +12,17 @@ import * as THREE from "three"
 
 import { clamp, lerp, valueRemap } from "~/lib/utils/math"
 
-import { Cameras } from "./cameras"
+import { CameraDebugHelper, Cameras, useCameraStore } from "./cameras"
 import { FLOW_SIM_SIZE } from "./constants"
 import { DebugTextures } from "./debug-textures"
 import { Atractor, setupScene, simulate } from "./fluid-sim"
 import { useAssets } from "./use-assets"
-import { DoubleFBO } from "./use-double-fbo"
-import { LerpedMouse } from "./use-lerp-mouse"
 import { useMaterials } from "./use-materials"
 import { useTargets } from "./use-targets"
 import { Env } from "./env"
 
 export function Scene() {
-  const activeCamera = useThree((state) => state.camera)
+  const activeCamera = useCameraStore((state) => state.camera)
 
   const { simulation, positions, positionsTexture, normalsTexture } =
     useMemo(() => {
@@ -58,31 +56,16 @@ export function Scene() {
   const [{ debugPointer, debugTextures, debugParticles }] = useControls(() => ({
     debugTextures: false,
     debugPointer: false,
-    renderFloor: true,
-    debugParticles: true
+    debugParticles: false
   }))
 
   const targets = useTargets()
-  const { flowFbo, orbeFlowFbo } = targets
   const assets = useAssets()
   const materials = useMaterials(targets, assets)
-  const {
-    flowMaterial,
-    raymarchMaterial,
-    updateFlowCamera,
-    ferroMeshMaterial
-  } = materials
+  const { ferroMeshMaterial } = materials
 
   ferroMeshMaterial.uniforms.uParticlesPositions.value = positionsTexture
   ferroMeshMaterial.uniforms.uParticlesNormals.value = normalsTexture
-
-  updateFlowCamera(activeCamera as THREE.PerspectiveCamera)
-
-  // const [handlePointerMoveFloor, lerpMouseFloor, vRefsFloor] = useLerpMouse({
-  //   intercept: (e) => {
-  //     e.point.z *= 0.5
-  //   }
-  // })
 
   const pointerDebugRef = useRef<THREE.Mesh>(null)
 
@@ -107,46 +90,9 @@ export function Scene() {
     screenFbo.setSize(size.width, size.height)
   }, [size])
 
-  useEffect(() => {
-    // for dev reasons, reset frame count when material gets reloaded
-    frameCount.current = 0
-  }, [flowMaterial, flowFbo])
+  const screenFboRef = useRef<typeof screenFbo | null>(screenFbo)
 
-  const flowScene = useMemo(() => new THREE.Scene(), [])
-
-  const renderFlow = useCallback(
-    (
-      gl: THREE.WebGLRenderer,
-      camera: THREE.Camera,
-      scene: THREE.Scene,
-      clock: THREE.Clock,
-      material: THREE.RawShaderMaterial,
-      fbo: DoubleFBO,
-      lerpedMouse: LerpedMouse
-    ) => {
-      // Update uniforms
-      material.uniforms.uMouse.value.set(
-        lerpedMouse.smoothUv.x,
-        lerpedMouse.smoothUv.y
-      )
-      material.uniforms.uFlowFeedBackTexture.value = fbo.read.texture
-      material.uniforms.uMouseVelocity.value =
-        lerpedMouse.velocity.length() * 100
-
-      material.uniforms.uMouseDirection.value
-        .set(lerpedMouse.velocity.x, lerpedMouse.velocity.y)
-        .normalize()
-      material.uniforms.uFrame.value = frameCount.current
-      material.uniforms.uTime.value = clock.getElapsedTime()
-
-      // Render flow sim
-      gl.setRenderTarget(fbo.write)
-      gl.render(scene, camera)
-      gl.setRenderTarget(debugTextures ? screenFbo : null)
-      fbo.swap()
-    },
-    [screenFbo, debugTextures]
-  )
+  screenFboRef.current = debugTextures ? screenFbo : null
 
   const vActive = useRef(0)
   const vActiveFast = useRef(0)
@@ -189,7 +135,7 @@ export function Scene() {
   }
 
   // calculate pointers
-  useFrame(({ camera }, delta) => {
+  useFrame((_, delta) => {
     const activePointers = pointers.filter((p) => p.current.isActive)
 
     if (!activePointers.length) return
@@ -199,7 +145,9 @@ export function Scene() {
     // pointerPos.copy(floorVec.current.pointerPos)
 
     activePointers.forEach((p) => {
-      const distToCamera = p.current.pointerPos.distanceTo(camera.position)
+      const distToCamera = p.current.pointerPos.distanceTo(
+        activeCamera.position
+      )
       if (distToCamera < minDistance) {
         minDistance = distToCamera
         pointerPos.copy(p.current.pointerPos)
@@ -237,14 +185,14 @@ export function Scene() {
     }
   })
 
+  const mainScene = useMemo(() => new THREE.Scene(), [])
+
   // update environment
-  useFrame(({ scene }) => {
-    const env = scene.environment
+  useFrame(() => {
+    const env = mainScene.environment
     if (!env) return
     const currentEnv = ferroMeshMaterial.uniforms.envMap.value
     if (currentEnv !== env) {
-      console.log(env)
-
       ferroMeshMaterial.uniforms.envMap.value = env
       const rotation = ferroMeshMaterial.uniforms.envMapRotation
         .value as THREE.Matrix3
@@ -252,7 +200,7 @@ export function Scene() {
       const _e1 = /*@__PURE__*/ new THREE.Euler()
       const _m1 = /*@__PURE__*/ new THREE.Matrix4()
 
-      _e1.copy(scene.environmentRotation)
+      _e1.copy(mainScene.environmentRotation)
 
       // accommodate left-handed frame
       _e1.x *= -1
@@ -267,8 +215,7 @@ export function Scene() {
   })
 
   // Update flow simulation
-  useFrame(({ gl, scene, clock }, delta) => {
-    // console.log(mainScene.environment)
+  useFrame(({ gl, clock }, delta) => {
     simulate(delta, attractor)
 
     if (points.current && debugParticles) {
@@ -279,34 +226,6 @@ export function Scene() {
     normalsTexture.needsUpdate = true
 
     gl.setClearColor("#000")
-
-    // const shouldDoubleRender = delta > 1 / 75
-
-    // floor
-    // lerpMouseFloor(shouldDoubleRender ? delta / 2 : delta)
-    // renderFlow(
-    //   gl,
-    //   activeCamera,
-    //   flowScene,
-    //   clock,
-    //   flowMaterial,
-    //   flowFbo,
-    //   vRefsFloor
-    // )
-
-    // if (shouldDoubleRender) {
-    //   // floor
-    //   lerpMouseFloor(delta / 2)
-    //   renderFlow(
-    //     gl,
-    //     activeCamera,
-    //     flowScene,
-    //     clock,
-    //     flowMaterial,
-    //     flowFbo,
-    //     vRefsFloor
-    //   )
-    // }
 
     ferroMeshMaterial.uniforms.uMousePosition.value.copy(smoothPointerPos)
 
@@ -358,117 +277,108 @@ export function Scene() {
 
     ferroMeshMaterial.uniforms.uTime.value = clock.getElapsedTime()
 
-    raymarchMaterial.uniforms.uFlowSize.value = FLOW_SIM_SIZE / 2
+    gl.setRenderTarget(targets.baseRenderFbo)
+    gl.render(mainScene, activeCamera)
 
-    gl.render(scene, activeCamera)
+    gl.setRenderTarget(screenFboRef.current)
+    gl.render(postprocessingScene, quadCamera)
     frameCount.current++
   }, 1)
 
   const points = useRef<THREE.Points>(null)
+  const postprocessingScene = useMemo(() => new THREE.Scene(), [])
+  const quadCamera = useMemo(
+    () => new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1),
+    []
+  )
 
-  // const customPointerCallback = useCallback((e: ThreeEvent<PointerEvent>) => {
-  //   // if(vRefs.shouldReset) {}
-  //   // e.stopPropagation()
-  //   // handlePointerMoveFloor(e)
-  // }, [])
+  quadCamera.position.z = 1
 
   return (
     <>
-      {/* Flow simulation (floor) */}
+      {/* Post processing */}
       {createPortal(
-        <mesh>
-          {/* Has to be 2x2 to fill the screen using pos attr */}
-          <planeGeometry args={[2, 2]} />
-          <primitive object={flowMaterial} />
-        </mesh>,
-        flowScene
+        <>
+          <mesh>
+            <planeGeometry args={[2, 2]} />
+            <primitive object={materials.postprocessingMaterial} />
+          </mesh>
+          <primitive object={quadCamera} />
+        </>,
+        postprocessingScene
       )}
 
-      {/* Pointer events (floor) */}
-      <mesh
-        visible={debugPointer}
-        rotation={[Math.PI / -2, 0, 0]}
-        position={[0, 0, 0]}
-        {...floorPointerPos}
-      >
-        <planeGeometry args={[FLOW_SIM_SIZE, FLOW_SIM_SIZE, 10, 10]} />
-        <meshBasicMaterial color="red" wireframe />
-      </mesh>
-      <mesh
-        visible={debugPointer}
-        rotation={[0, 0, 0]}
-        position={[0, 0, 0]}
-        {...wallPointerPos}
-      >
-        <planeGeometry args={[FLOW_SIM_SIZE, FLOW_SIM_SIZE, 10, 10]} />
-        <meshBasicMaterial color="red" wireframe />
-      </mesh>
-      <mesh
-        renderOrder={2}
-        visible={debugPointer}
-        rotation={[0, 0, 0]}
-        position={[0, 0.22, 0]}
-        {...conePointerPos}
-      >
-        {/* <coneGeometry args={[0.3, 0.3 * Math.sqrt(3), 10, 10]} /> */}
-        <coneGeometry args={[0.31, 0.27 * Math.sqrt(3), 10, 10]} />
-        <meshBasicMaterial
-          transparent
-          depthTest={false}
-          color="red"
-          wireframe
-        />
-      </mesh>
-      <mesh
-        visible={debugPointer}
-        position={[0, 0, 0]}
-        ref={pointerDebugRef as any}
-        renderOrder={2}
-      >
-        <sphereGeometry args={[0.02, 10, 10]} />
-        <meshBasicMaterial
-          depthTest={false}
-          color="green"
-          wireframe
-          transparent
-        />
-      </mesh>
+      {/* Main renderer scene */}
+      {createPortal(
+        <>
+          {/* Debug wireframes */}
+          <mesh
+            visible={debugPointer}
+            rotation={[Math.PI / -2, 0, 0]}
+            position={[0, 0, 0]}
+            {...floorPointerPos}
+          >
+            <planeGeometry args={[FLOW_SIM_SIZE, FLOW_SIM_SIZE, 10, 10]} />
+            <meshBasicMaterial color="red" wireframe />
+          </mesh>
+          <mesh
+            visible={debugPointer}
+            rotation={[0, 0, 0]}
+            position={[0, 0, 0]}
+            {...wallPointerPos}
+          >
+            <planeGeometry args={[FLOW_SIM_SIZE, FLOW_SIM_SIZE, 10, 10]} />
+            <meshBasicMaterial color="red" wireframe />
+          </mesh>
+          <mesh
+            renderOrder={2}
+            visible={debugPointer}
+            rotation={[0, 0, 0]}
+            position={[0, 0.22, 0]}
+            {...conePointerPos}
+          >
+            <coneGeometry args={[0.31, 0.27 * Math.sqrt(3), 10, 10]} />
+            <meshBasicMaterial
+              transparent
+              depthTest={false}
+              color="red"
+              wireframe
+            />
+          </mesh>
+          <mesh
+            visible={debugPointer}
+            position={[0, 0, 0]}
+            ref={pointerDebugRef as any}
+            renderOrder={2}
+          >
+            <sphereGeometry args={[0.02, 10, 10]} />
+            <meshBasicMaterial
+              depthTest={false}
+              color="green"
+              wireframe
+              transparent
+            />
+          </mesh>
+          {/* points debug */}
+          <points
+            visible={debugParticles}
+            frustumCulled={false}
+            renderOrder={2}
+            ref={points as any}
+          >
+            <bufferGeometry>
+              <bufferAttribute
+                args={[positions, 4]}
+                attach="attributes-position"
+                usage={THREE.DynamicDrawUsage}
+              />
+            </bufferGeometry>
 
-      {/* Ferro mesh */}
-      <mesh
-        rotation={[Math.PI / -2, 0, 0]}
-        position={[0, 0, 0]}
-        scale={[2, 2, 2]}
-      >
-        <planeGeometry args={[2, 2, 300, 300]} />
-        <primitive object={ferroMeshMaterial} />
-      </mesh>
-
-      {/* <mesh position={[0.4, 0, 0]}>
-        <coneGeometry args={[0.6, 0.9, 30, 30]} />
-        <meshStandardMaterial roughness={0} color="black" />
-      </mesh> */}
-
-      {/* points debug */}
-      <points
-        visible={debugParticles}
-        frustumCulled={false}
-        renderOrder={2}
-        ref={points as any}
-      >
-        <bufferGeometry>
-          <bufferAttribute
-            args={[positions, 4]}
-            attach="attributes-position"
-            usage={THREE.DynamicDrawUsage}
-          />
-        </bufferGeometry>
-
-        <rawShaderMaterial
-          transparent
-          depthTest={false}
-          precision={"highp"}
-          fragmentShader={`
+            <rawShaderMaterial
+              transparent
+              depthTest={false}
+              precision={"highp"}
+              fragmentShader={`
             precision highp float;
             varying float isActive;
 
@@ -479,7 +389,7 @@ export function Scene() {
               );
             }
           `}
-          vertexShader={`
+              vertexShader={`
             precision highp float;
             attribute vec4 position;
             
@@ -494,28 +404,30 @@ export function Scene() {
               gl_PointSize = 3.0;
             }
           `}
-        />
-      </points>
-
-      <Cameras />
-
-      <Env />
-
-      {/* <mesh
-        position={[0.5, 0.5, 0.5]}
-      >
-        <sphereGeometry args={[0.1, 32, 32]} />
-        <meshStandardMaterial color="black" roughness={0} />
-      </mesh> */}
+            />
+          </points>
+          {/* ""Real"" mesh, I mean nothing is real here */}
+          <mesh
+            rotation={[Math.PI / -2, 0, 0]}
+            position={[0, 0, 0]}
+            scale={[2, 2, 2]}
+          >
+            <planeGeometry args={[2, 2, 300, 300]} />
+            <primitive object={ferroMeshMaterial} />
+          </mesh>
+          <Env />
+          <CameraDebugHelper />
+          <Cameras />
+        </>,
+        mainScene
+      )}
 
       {/* Display textures */}
       {debugTextures && (
         <DebugTextures
           textures={{
-            flow: flowFbo.read.texture,
-            pyramidFlow: orbeFlowFbo.read.texture,
-            screen: screenFbo.texture,
-            screenDepth: screenFbo.depthTexture!
+            base: targets.baseRenderFbo.texture,
+            screen: screenFbo.texture
           }}
         />
       )}

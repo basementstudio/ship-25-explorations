@@ -10,12 +10,18 @@ import { createOrbeRaymarchMaterial } from "./materials/orbe-raymarch-material"
 import { getRaymarchProgram } from "./materials/raymarch-program"
 import type { Assets } from "./use-assets"
 import { flowSize, SceneTargets } from "./use-targets"
+import { createPostprocessingMaterial } from "./materials/postprocessing-material"
 
 export type SceneMaterials = ReturnType<typeof useMaterials>
 
 export function useMaterials(targets: SceneTargets, assets: Assets) {
   const size = useThree((state) => state.size)
+
   const materials = useMemo(() => {
+    // POSTPROCESSING
+    const postprocessingMaterial = createPostprocessingMaterial()
+    postprocessingMaterial.uniforms.baseMap.value = targets.baseRenderFbo.texture
+
     // FERRO MESH MATERIAL
     const ferroMeshMaterial = createFerroMeshMaterial()
     ferroMeshMaterial.uniforms.envMap = { value: null }
@@ -107,6 +113,7 @@ export function useMaterials(targets: SceneTargets, assets: Assets) {
     }
 
     return {
+      postprocessingMaterial,
       ferroMeshMaterial,
       flowMaterial,
       flowNormalMaterial,

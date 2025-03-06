@@ -3,6 +3,7 @@ import { useThree } from "@react-three/fiber"
 import { useControls } from "leva"
 import { memo, useEffect, useRef } from "react"
 import { CameraHelper, PerspectiveCamera } from "three"
+import { create } from "zustand"
 
 export const mainCamera = new PerspectiveCamera(75, 1, 1, 100)
 
@@ -15,9 +16,20 @@ const cameraMap = {
   main: mainCamera
 }
 
+interface CameraStore {
+  camera: PerspectiveCamera
+  set: (camera: PerspectiveCamera) => void
+}
+
+export const useCameraStore = create<CameraStore>((set) => ({
+  camera: mainCamera,
+  set: (camera) => set({ camera })
+}))
+
 function CamerasInner() {
-  const activeCamera = useThree((state) => state.camera)
-  const set = useThree((state) => state.set)
+  const set = useCameraStore((state) => state.set)
+
+  const threeSet = useThree((state) => state.set)
 
   const [{ camera }] = useControls(() => ({
     camera: {
@@ -29,13 +41,10 @@ function CamerasInner() {
   useEffect(() => {
     mainCamera.lookAt(0, 0.2, 0)
     const selectedCamera = cameraMap[camera as keyof typeof cameraMap]
-    set({ camera: selectedCamera })
+    set(selectedCamera)
     selectedCamera.updateProjectionMatrix()
+    threeSet({ camera: selectedCamera })
   }, [camera])
-
-  const mainCameraRef = useRef(mainCamera)
-
-  useHelper(activeCamera === orbitCamera && mainCameraRef, CameraHelper)
 
   const size = useThree((state) => state.size)
 
@@ -59,4 +68,13 @@ function CamerasInner() {
       <OrbitControls camera={orbitCamera} />
     </>
   )
+}
+
+export function CameraDebugHelper() {
+  const mainCameraRef = useRef(mainCamera)
+  const activeCamera = useCameraStore((state) => state.camera)
+
+  useHelper(activeCamera === orbitCamera && mainCameraRef, CameraHelper)
+
+  return null
 }
