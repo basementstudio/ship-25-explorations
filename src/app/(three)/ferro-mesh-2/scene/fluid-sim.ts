@@ -410,6 +410,7 @@ class FlipFluid {
       )
 
       pointANoise = Math.abs(pointANoise)
+      pointANoise = Math.pow(pointANoise, 2)
 
       pointAFactor *= pointANoise
 
