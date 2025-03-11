@@ -7,6 +7,7 @@ import {
   useThree
 } from "@react-three/fiber"
 import { useControls } from "leva"
+import { animate, motionValue } from "motion"
 import { useCallback, useEffect, useMemo, useRef } from "react"
 import * as THREE from "three"
 
@@ -15,13 +16,11 @@ import { clamp, lerp, valueRemap } from "~/lib/utils/math"
 import { CameraDebugHelper, Cameras, useCameraStore } from "./cameras"
 import { FLOW_SIM_SIZE } from "./constants"
 import { DebugTextures } from "./debug-textures"
+import { Env } from "./env"
 import { Atractor, setupScene, simulate } from "./fluid-sim"
 import { useAssets } from "./use-assets"
 import { useMaterials } from "./use-materials"
 import { useTargets } from "./use-targets"
-import { Env } from "./env"
-
-import { motionValue, animate } from "motion"
 
 export function Scene() {
   const activeCamera = useCameraStore((state) => state.camera)
@@ -226,8 +225,8 @@ export function Scene() {
     const tmb = new THREE.Vector3()
 
     animate(pyramidReveal, 1, {
-      duration: 3,
-      delay: 2,
+      duration: 2,
+      delay: 1.5,
       ease: "circInOut",
       onUpdate: () => {
         ferroMeshMaterial.uniforms.uMainPyramidHeight.value =
@@ -255,7 +254,7 @@ export function Scene() {
 
     animate(staticPeaks, 1, {
       duration: 1,
-      delay: 0.5,
+      delay: 0.0,
       ease: "circInOut",
       onUpdate: () => {
         fluid.autoParticles = staticPeaks.get()
@@ -263,7 +262,7 @@ export function Scene() {
       onComplete: () => {
         animate(staticPeaks, 0, {
           duration: 1.5,
-          delay: 2.3,
+          delay: 1.5,
           ease: "linear",
           onUpdate: () => {
             fluid.autoParticles = staticPeaks.get()

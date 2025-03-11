@@ -208,6 +208,16 @@ vec3 displacement(vec3 p) {
     p = addParticles(p, n);
   }
 
+  if (uMainPyramidHeight < 1.0) {
+    float dis = distToCenter * 3.0;
+    dis = clamp(dis, 0.0, 1.0);
+    dis = 1.0 - dis;
+    dis = pow(dis, 2.0);
+    float nPy = n * dis * 0.1;
+    nPy *= 1.0 - uMainPyramidHeight;
+    p.y += nPy;
+  }
+
   float noiseMultiplier = clamp(1.0 - p.y * 20.0, 0.5, 1.0);
 
   // add noise

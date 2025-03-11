@@ -46,7 +46,13 @@ function CamerasInner() {
     threeSet({ camera: selectedCamera })
   }, [camera])
 
-  const size = useThree((state) => state.size)
+  const width = useThree((state) => state.size.width)
+  const height = useThree((state) => state.size.height)
+
+  useEffect(() => {
+    mainCamera.aspect = width / height
+    mainCamera.updateProjectionMatrix()
+  }, [width, height])
 
   return (
     <>
@@ -56,14 +62,14 @@ function CamerasInner() {
         fov={30}
         near={0.1}
         far={4}
-        aspect={size.width / size.height}
+        aspect={width / height}
       />
       <primitive
         object={orbitCamera}
         near={0.1}
         far={7}
         position={[0.7, 0.7, 0.7]}
-        aspect={size.width / size.height}
+        aspect={width / height}
       />
       <OrbitControls camera={orbitCamera} />
     </>
