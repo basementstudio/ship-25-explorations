@@ -21,7 +21,7 @@ export function useAssets() {
 
   const envMap = useTexture("/textures/hdri4.png")
 
-  const matcap = useTexture("/textures/matcap-4.jpg")
+  const matcap = useTexture("/textures/matcap-7.jpg")
 
   envMap.magFilter = THREE.NearestFilter
   envMap.minFilter = THREE.NearestFilter

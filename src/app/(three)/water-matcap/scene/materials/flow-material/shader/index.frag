@@ -50,7 +50,7 @@ Mouse getMouseWave() {
   float clampedMouseInfluence = clamp(mouseInfluence, 0.1, 1.0);
 
   float mouseWave = 0.0;
-  float mouseRadius = mix(0.01, 0.08, clampedMouseInfluence);
+  float mouseRadius = mix(0.02, 0.1, clampedMouseInfluence);
   float invertedRadius = 1.0 / mouseRadius;
 
   float mouseDist = distance(mousePos, vUv);
@@ -111,7 +111,7 @@ void main() {
     // weight in the distance to the floor// d += mouse.wave * 0.05 * smoothstep(0.05, 0.0, abs(d)) * mouse.mixer;
   }
   else {
-    d += mouse.wave * 0.03 * mouse.mixer;
+    d += mouse.wave * 0.1 * mouse.mixer;
   }
 
   // damping

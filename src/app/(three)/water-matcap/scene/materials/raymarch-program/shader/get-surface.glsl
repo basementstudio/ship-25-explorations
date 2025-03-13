@@ -42,7 +42,9 @@ vec3 getEnv3(vec3 normal) {
 vec3 sampleMatcap(vec3 reflected) {
   float m = 2.8284271247461903 * sqrt(reflected.z + 1.0);
   vec2 uv = reflected.xy / m + 0.5;
-  return texture(uMatcap, uv).rgb;
+  vec3 mat = texture(uMatcap, uv).rgb;
+
+  return mat;
 }
 
 vec3 getSurface(vec3 p, vec3 rayDirection) {
