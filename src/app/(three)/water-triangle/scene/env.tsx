@@ -120,14 +120,13 @@ function Room() {
         rotation={[0, Math.PI * 0.5, 0]}
         target={false}
       />
-
-      <Lightformer
-        form="box"
-        intensity={10}
-        position={[-3, 10, 3]}
-        scale={[5, 1, 10]}
-        target={false}
+      <pointLight
+        intensity={100}
+        decay={2}
+        distance={0.5}
+        position={[14, 12.0, -10.0]}
       />
+      <pointLight intensity={200} decay={2} position={[2, 12.0, -12.0]} />
       {/* 
       <mesh
         position={[14.0, 14.0, -10.0]}
@@ -153,8 +152,6 @@ function Room() {
         light={{ intensity: 100, distance: 8, decay: 2 }}
       /> */}
 
-      <pointLight intensity={7} decay={0.4} position={[14, 12.0, -10.0]} />
-      <pointLight intensity={200} decay={2} position={[2, 12.0, -12.0]} />
       {/* <Lightformer
         form="box"
         intensity={80}

@@ -2,7 +2,7 @@
 
 import { createPortal, useFrame, useThree } from "@react-three/fiber"
 import { useControls } from "leva"
-import { useEffect, useMemo, useRef } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import * as THREE from "three"
 
 import { Cameras, useCameraStore } from "./cameras"
@@ -35,6 +35,8 @@ export function Scene() {
 
   const mainScene = useMemo(() => new THREE.Scene(), [])
 
+  const [envMap, setEnvMap] = useState<THREE.Texture | null>(null)
+
   // update environment
   useFrame(({ scene }) => {
     const env = scene.environment
@@ -59,6 +61,8 @@ export function Scene() {
       _e1.z *= -1
 
       rotation.setFromMatrix4(_m1.makeRotationFromEuler(_e1))
+
+      setEnvMap(env)
 
       console.log(raymarchMaterial.uniforms.envMap)
     }
@@ -168,10 +172,19 @@ export function Scene() {
         <primitive object={raymarchMaterial} />
       </mesh>
 
-      <mesh scale={[0.44, 0.1, 0.44]}>
+      <mesh position={[0, -0.4, 0]} scale={[0.44, 1, 0.44]}>
         <primitive object={assets.pyramid.geometry} />
-        <meshStandardMaterial color="black" metalness={1} roughness={0.2} />
+        <meshStandardMaterial
+          color="black"
+          metalness={1}
+          roughness={0.2}
+          envMap={envMap}
+        />
       </mesh>
+
+      <pointLight decay={0.1} intensity={200} position={[-2, 0.5, -1.7]} />
+      <pointLight decay={0.1} intensity={200} position={[2, 0.5, -1.7]} />
+      <pointLight decay={0.1} intensity={200} position={[0, 0.5, 2]} />
 
       <Cameras />
       <Env />

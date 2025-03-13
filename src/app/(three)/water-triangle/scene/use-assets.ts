@@ -14,7 +14,7 @@ export type SceneAssets = ReturnType<typeof useAssets>
 
 export function useAssets() {
   const { nodes } = useGLTF(
-    "/models/extruded-try.glb"
+    "/models/extruded-try-soft.glb"
   ) as any as SphereGLTFResult
 
   const pyramid = nodes["Cylinder"] as THREE.Mesh
