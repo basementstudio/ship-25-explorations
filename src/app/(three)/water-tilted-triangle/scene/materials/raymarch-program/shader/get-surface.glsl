@@ -57,11 +57,16 @@ vec3 getSurface(vec3 p, vec3 rayDirection) {
 
   vec3 matcap = sampleMatcap(reflectedNormal);
 
-  // vec3 light = getLight(p, normal);
+  float distanceFromCenter = length(p.xz);
 
-  // return reflectedNormal;
+  float edgeFactor = 2.0 - distanceFromCenter * 1.2;
+  edgeFactor = clamp(edgeFactor, 0.0, 1.0);
 
-  return matcap;
+  vec3 col = matcap;
+
+  col *= edgeFactor;
+
+  return col;
 }
 
 #pragma glslify: export(getSurface)

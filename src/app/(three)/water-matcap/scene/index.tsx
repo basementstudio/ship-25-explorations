@@ -175,8 +175,8 @@ export function Scene() {
         <meshStandardMaterial
           color="black"
           metalness={1}
-          roughness={0.2}
-          envMap={envMap}
+          // roughness={0.2}
+          // envMap={envMap}
         />
       </mesh>
 

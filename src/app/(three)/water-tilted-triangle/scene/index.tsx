@@ -170,7 +170,11 @@ export function Scene() {
         <primitive object={raymarchMaterial} />
       </mesh>
 
-      <mesh position={[0, -0.4, 0]} scale={[0.44, 1, 0.44]}>
+      <mesh
+        rotation={[Math.PI / 2, 0, 0]}
+        position={[0, -0.2, 0]}
+        scale={[0.9, 0.1, 0.9]}
+      >
         <primitive object={assets.pyramid.geometry} />
         <meshStandardMaterial
           color="black"

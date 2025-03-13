@@ -50,7 +50,7 @@ Mouse getMouseWave() {
   float clampedMouseInfluence = clamp(mouseInfluence, 0.1, 1.0);
 
   float mouseWave = 0.0;
-  float mouseRadius = mix(0.02, 0.1, clampedMouseInfluence);
+  float mouseRadius = mix(0.01, 0.08, clampedMouseInfluence);
   float invertedRadius = 1.0 / mouseRadius;
 
   float mouseDist = distance(mousePos, vUv);
@@ -129,11 +129,11 @@ void main() {
   // remap from -1-1 to 0-1
   d = d * 0.5 + 0.5;
 
-  float tri = sdEquilateralTriangle(vUv - vec2(0.5), 0.1);
+  float tri = sdEquilateralTriangle(vUv - vec2(0.5, 0.55), 0.1);
 
   if (tri < 0.0) {
-    d = mix(d, 0.5, 0.05);
-    // d = 0.5;
+    // d = mix(d, 0.5, 0.05);
+    d = 0.2;
   }
 
   // Put previous state as "y":

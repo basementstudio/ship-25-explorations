@@ -132,8 +132,8 @@ void main() {
   float tri = sdEquilateralTriangle(vUv - vec2(0.5), 0.1);
 
   if (tri < 0.0) {
-    d = mix(d, 0.5, 0.05);
-    // d = 0.5;
+    // d = mix(d, 0.5, 0.05);
+    d = 0.5;
   }
 
   // Put previous state as "y":
