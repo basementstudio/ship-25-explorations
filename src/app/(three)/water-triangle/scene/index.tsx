@@ -5,11 +5,11 @@ import { useControls } from "leva"
 import { useEffect, useMemo, useRef } from "react"
 import * as THREE from "three"
 
-import { Cameras } from "./cameras"
+import { Cameras, useCameraStore } from "./cameras"
 import { FLOW_SIM_SIZE, RAYMARCH_WATER_CENTER } from "./constants"
 import { RAYMARCH_FLOW_SIZE } from "./constants"
 import { DebugTextures } from "./debug-textures"
-import { Orbe } from "./orbe"
+import { Env } from "./env"
 import { renderFlow } from "./render-flow"
 import { useAssets } from "./use-assets"
 import { useLerpMouse } from "./use-lerp-mouse"
@@ -17,7 +17,7 @@ import { useMaterials } from "./use-materials"
 import { useTargets } from "./use-targets"
 
 export function Scene() {
-  const activeCamera = useThree((state) => state.camera)
+  const activeCamera = useCameraStore((state) => state.camera)
 
   const [{ debugFloor, renderFloor, debugTextures }] = useControls(() => ({
     debugTextures: false,
@@ -36,8 +36,8 @@ export function Scene() {
   const mainScene = useMemo(() => new THREE.Scene(), [])
 
   // update environment
-  useFrame(() => {
-    const env = mainScene.environment
+  useFrame(({ scene }) => {
+    const env = scene.environment
     if (!env) return
     const currentEnv = raymarchMaterial.uniforms.envMap.value
     if (currentEnv !== env) {
@@ -48,7 +48,7 @@ export function Scene() {
       const _e1 = /*@__PURE__*/ new THREE.Euler()
       const _m1 = /*@__PURE__*/ new THREE.Matrix4()
 
-      _e1.copy(mainScene.environmentRotation)
+      _e1.copy(scene.environmentRotation)
 
       // accommodate left-handed frame
       _e1.x *= -1
@@ -59,6 +59,8 @@ export function Scene() {
       _e1.z *= -1
 
       rotation.setFromMatrix4(_m1.makeRotationFromEuler(_e1))
+
+      console.log(raymarchMaterial.uniforms.envMap)
     }
   })
 
@@ -166,7 +168,13 @@ export function Scene() {
         <primitive object={raymarchMaterial} />
       </mesh>
 
+      <mesh scale={[0.44, 0.1, 0.44]}>
+        <primitive object={assets.pyramid.geometry} />
+        <meshStandardMaterial color="black" metalness={1} roughness={0.2} />
+      </mesh>
+
       <Cameras />
+      <Env />
 
       {/* Display textures */}
       {debugTextures && (

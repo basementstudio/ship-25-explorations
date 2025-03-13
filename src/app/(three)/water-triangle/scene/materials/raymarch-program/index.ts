@@ -1,5 +1,5 @@
 import { Mat4, Vec3 } from "ogl"
-import { GLSL3, RawShaderMaterial } from "three"
+import { GLSL3, Matrix3, RawShaderMaterial } from "three"
 
 import fragmentShader from "./shader/index.frag"
 import vertexShader from "./shader/index.vert"
@@ -16,7 +16,13 @@ export function getRaymarchProgram() {
     transparent: true,
     depthWrite: true,
     uniforms: {
-      uPyramidMatrix: { value: pyramidMatrix }
+      uPyramidMatrix: { value: pyramidMatrix },
+      envMap: {
+        value: null
+      },
+      envMapRotation: {
+        value: new Matrix3()
+      }
     }
   })
 

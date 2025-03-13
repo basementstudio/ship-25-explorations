@@ -6,7 +6,7 @@ import * as THREE from "three"
 
 interface SphereGLTFResult extends GLTF {
   nodes: {
-    Cube: THREE.Mesh
+    Cylinder: THREE.Mesh
   }
 }
 
@@ -14,9 +14,10 @@ export type SceneAssets = ReturnType<typeof useAssets>
 
 export function useAssets() {
   const { nodes } = useGLTF(
-    "/models/triangle-este-si.glb"
+    "/models/extruded-try.glb"
   ) as any as SphereGLTFResult
-  const pyramid = nodes["Cube"] as THREE.Mesh
+
+  const pyramid = nodes["Cylinder"] as THREE.Mesh
 
   const envMap = useTexture("/textures/hdri4.png")
 

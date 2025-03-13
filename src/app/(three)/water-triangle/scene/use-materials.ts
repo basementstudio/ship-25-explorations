@@ -54,7 +54,6 @@ export function useMaterials(targets: SceneTargets, assets: Assets) {
     raymarchMaterial.uniforms.pyramidReveal = { value: 0.0 }
     raymarchMaterial.uniforms.mouseSpeed = { value: 0.0 }
     raymarchMaterial.uniforms.uNoiseTexture = { value: assets.noiseMap }
-    raymarchMaterial.uniforms.uEnvMap = { value: assets.envMap }
     raymarchMaterial.uniforms.uFlowSize = { value: FLOW_SIM_SIZE / 2 }
 
     const updateFlowCamera = (camera: PerspectiveCamera) => {

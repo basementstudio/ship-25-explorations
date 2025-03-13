@@ -8,14 +8,16 @@ export function Env() {
 
   const background = camera === mainCamera ? false : true
 
+  console.log({ background })
+
   return (
     <Environment
       resolution={1024}
       background={background}
       frames={1}
-      environmentIntensity={1.5}
+      environmentIntensity={2}
     >
-      <Room highlight={"#121212"} />
+      <Room />
     </Environment>
   )
 }
@@ -24,7 +26,7 @@ const box = new THREE.BoxGeometry()
 const white = new THREE.MeshStandardMaterial({
   color: new THREE.Color(1, 1, 1)
 })
-function Room({ highlight }: { highlight: string }) {
+function Room() {
   return (
     <group position={[0, -0.5, 0]}>
       {/** Room, just an inverted box */}
@@ -116,6 +118,14 @@ function Room({ highlight }: { highlight: string }) {
         position={[10.0, 14.0, -12.0]}
         scale={[0.1, 10.5, 10.5]}
         rotation={[0, Math.PI * 0.5, 0]}
+        target={false}
+      />
+
+      <Lightformer
+        form="box"
+        intensity={10}
+        position={[-3, 10, 3]}
+        scale={[5, 1, 10]}
         target={false}
       />
       {/* 
