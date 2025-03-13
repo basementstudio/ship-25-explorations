@@ -133,7 +133,7 @@ void main() {
 
   if (tri < 0.0) {
     // d = mix(d, 0.5, 0.05);
-    d = 0.2;
+    d = 0.6;
   }
 
   // Put previous state as "y":
