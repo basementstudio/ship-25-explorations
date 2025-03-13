@@ -33,8 +33,6 @@ export function Scene() {
 
   updateFlowCamera(activeCamera as THREE.PerspectiveCamera)
 
-  const mainScene = useMemo(() => new THREE.Scene(), [])
-
   const [envMap, setEnvMap] = useState<THREE.Texture | null>(null)
 
   // update environment
@@ -181,6 +179,11 @@ export function Scene() {
           envMap={envMap}
         />
       </mesh>
+
+      {/* <mesh position={[0, 0.2, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <meshMatcapMaterial matcap={assets.matcap} />
+        <planeGeometry args={[10, 10]} />
+      </mesh> */}
 
       {/* <pointLight decay={2} intensity={200} position={[-8, 0.5, -1.7]} />
       <pointLight decay={2} intensity={200} position={[2, 0.5, -1.7]} />

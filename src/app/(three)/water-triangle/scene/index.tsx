@@ -182,9 +182,9 @@ export function Scene() {
         />
       </mesh>
 
-      <pointLight decay={0.1} intensity={200} position={[-2, 0.5, -1.7]} />
-      <pointLight decay={0.1} intensity={200} position={[2, 0.5, -1.7]} />
-      <pointLight decay={0.1} intensity={200} position={[0, 0.5, 2]} />
+      <pointLight decay={1} intensity={100} position={[-2, 0.5, -1.7]} />
+      <pointLight decay={0.9} intensity={50} position={[2, 0.5, -1.7]} />
+      <pointLight decay={0.9} intensity={50} position={[0, 0.5, 2]} />
 
       <Cameras />
       <Env />

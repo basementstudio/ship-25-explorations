@@ -46,7 +46,7 @@ vec3 sampleMatcap(vec3 reflected) {
 }
 
 vec3 getSurface(vec3 p, vec3 rayDirection) {
-  vec3 viewDir = -rayDirection;
+  vec3 viewDir = normalize(-rayDirection);
   vec3 normal = getNormal(p);
 
   vec3 reflectedNormal = reflect(viewDir, normal);
