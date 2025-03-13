@@ -24,7 +24,8 @@ const navLinks: HeaderLink[] = [
   { name: "ferro-mesh", url: "/ferro-mesh" },
   { name: "ferro-mesh-2", url: "/ferro-mesh-2" },
   { name: "water-triangle", url: "/water-triangle" },
-  { name: "water-matcap", url: "/water-triangle" }
+  { name: "water-matcap", url: "/water-matcap" },
+  { name: "water-tilted-triangle", url: "/water-tilted-triangle" }
 ].reverse()
 
 export const Header = () => {
