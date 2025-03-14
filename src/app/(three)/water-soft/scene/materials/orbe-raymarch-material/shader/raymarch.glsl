@@ -2,7 +2,7 @@
 #pragma glslify: structsModule = require('./structs.glsl', RayResult=RayResult)
 #pragma glslify: getSceneHit = require('./get-scene-hit.glsl', time=time, texture = texture, textureSize = textureSize)
 
-const float SURFACE_DIST = 0.0001;
+const float SURFACE_DIST = 0.001;
 const int MAX_STEPS = 200;
 
 RayResult castRay(
@@ -48,6 +48,7 @@ RaymarchResult rayMarch(vec3 rayPosition, vec3 rayDirection, float maxDepth) {
     result = vec4(color, 1.0);
     distance = hit.distance;
   } else {
+    discard;
     distance = 1.0;
   }
 

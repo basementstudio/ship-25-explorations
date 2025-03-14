@@ -4,7 +4,7 @@ uniform samplerCube envMap;
 uniform mat3 envMapRotation;
 uniform sampler2D uMatcap;
 
-const float GRADIENT_BIAS = 0.01;
+const float GRADIENT_BIAS = 0.001;
 
 // Normal calculation function (using gradient):
 const vec3 GRADIENT_STEP = vec3(GRADIENT_BIAS, 0.0, 0.0);
