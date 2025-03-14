@@ -7,6 +7,7 @@ uniform vec2 uResolution;
 uniform int uFrame;
 uniform float uMouseVelocity;
 uniform vec2 uMouseDirection;
+uniform float uTriangleHeight;
 
 varying vec2 vUv;
 
@@ -129,11 +130,11 @@ void main() {
   // remap from -1-1 to 0-1
   d = d * 0.5 + 0.5;
 
-  float tri = sdEquilateralTriangle(vUv - vec2(0.5), 0.1);
+  float tri = sdEquilateralTriangle(vUv - vec2(0.5), 0.09);
 
   if (tri < 0.0) {
     // d = mix(d, 0.5, 0.05);
-    d = 0.5;
+    d = uTriangleHeight;
   }
 
   // Put previous state as "y":

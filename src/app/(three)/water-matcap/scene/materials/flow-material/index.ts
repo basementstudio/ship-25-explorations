@@ -19,7 +19,8 @@ export function createFlowMaterial(
       uResolution: { value: new THREE.Vector2(textureSize, textureSize) },
       uFrame: { value: 0 },
       uMouseVelocity: { value: 0 },
-      uMouseDirection: { value: new THREE.Vector2() }
+      uMouseDirection: { value: new THREE.Vector2() },
+      uTriangleHeight: { value: 0.5 }
     }
   })
 

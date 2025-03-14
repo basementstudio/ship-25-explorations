@@ -61,8 +61,6 @@ export function Scene() {
       rotation.setFromMatrix4(_m1.makeRotationFromEuler(_e1))
 
       setEnvMap(env)
-
-      console.log(raymarchMaterial.uniforms.envMap)
     }
   })
 
@@ -98,6 +96,25 @@ export function Scene() {
 
   // Update flow simulation
   useFrame(({ gl, scene, clock }, delta) => {
+    const t = clock.getElapsedTime()
+
+    let s = Math.sin(t * 1) - 0.2
+    // s = Math.max(s, 0)
+
+    if (s < 0) {
+      s = 0
+    } else {
+      s = 1
+    }
+
+    let triangleHeight = s * 0.4 + 0.5
+
+    flowMaterial.uniforms.uTriangleHeight.value = triangleHeight
+
+    if (geoTryRef.current) {
+      geoTryRef.current.scale.y = (triangleHeight - 0.5) * 3
+    }
+
     const shouldDoubleRender = delta > 1 / 75
 
     gl.setRenderTarget(debugTextures ? screenFbo : null)
@@ -136,6 +153,8 @@ export function Scene() {
     frameCount.current++
   }, 1)
 
+  const geoTryRef = useRef<THREE.Mesh>(null)
+
   return (
     <>
       {/* Flow simulation (floor) */}
@@ -170,14 +189,9 @@ export function Scene() {
         <primitive object={raymarchMaterial} />
       </mesh>
 
-      <mesh position={[0, -0.4, 0]} scale={[0.44, 1, 0.44]}>
+      <mesh ref={geoTryRef} position={[0, -0.4, 0]} scale={[0.44, 1, 0.44]}>
         <primitive object={assets.pyramid.geometry} />
-        <meshStandardMaterial
-          color="black"
-          metalness={1}
-          // roughness={0.2}
-          // envMap={envMap}
-        />
+        <meshStandardMaterial color="black" metalness={1} />
       </mesh>
 
       {/* <mesh position={[0, 0.2, 0]} rotation={[-Math.PI / 2, 0, 0]}>
