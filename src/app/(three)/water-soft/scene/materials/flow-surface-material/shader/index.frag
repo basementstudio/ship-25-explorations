@@ -23,15 +23,14 @@ float valueRemap(
   return newMin + (value - min) * (newMax - newMin) / (max - min);
 }
 
-vec3 heightToNormal(vec2 uv, float tSize) {
-  float height = texture(uHeightmap, uv).r; // Use the X channel for height
+vec3 heightToNormal(float height, vec2 uv, float tSize) {
   float heightX = texture(uHeightmap, uv + vec2(1.0 / tSize, 0.0)).r;
   float heightY = texture(uHeightmap, uv + vec2(0.0, 1.0 / tSize)).r;
 
   float dx = heightX - height;
   float dy = heightY - height;
 
-  vec3 normal = vec3(dx, 0.1, dy);
+  vec3 normal = vec3(dx, 0.5, dy);
   return normalize(normal);
 }
 
@@ -52,9 +51,13 @@ vec3 getEnv3(vec3 normal) {
 // main
 void main() {
   vec2 uv = vUv;
-  vec3 normal = heightToNormal(uv, float(textureSize(uHeightmap, 0)));
+  float height = texture(uHeightmap, uv).r; // Use the X channel for height
+  vec3 normal = heightToNormal(height, uv, float(textureSize(uHeightmap, 0)));
 
-  vec3 viewDirection = normalize(cameraPosition - vWorldPosition);
+  vec3 fragPosition = vWorldPosition;
+  fragPosition.y += height;
+
+  vec3 viewDirection = normalize(cameraPosition - fragPosition);
   vec3 reflectedNormal = reflect(viewDirection, normal);
 
   vec3 color = vec3(1.0);
