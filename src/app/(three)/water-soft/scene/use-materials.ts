@@ -4,7 +4,7 @@ import { PerspectiveCamera, Vector2, Vector3 } from "three"
 
 import { FLOW_SIM_SIZE } from "./constants"
 import { createFlowMaterial } from "./materials/flow-material"
-import { createFlowNormalMaterial } from "./materials/flow-normal-material"
+import { createFlowSurfaceMaterial } from "./materials/flow-surface-material"
 import { getMapDebugProgram } from "./materials/map-debug-program"
 import { getRaymarchProgram } from "./materials/raymarch-program"
 import type { Assets } from "./use-assets"
@@ -30,8 +30,9 @@ export function useMaterials(targets: SceneTargets, assets: Assets) {
     )
 
     // FLOW NORMAL MATERIAL
-    const flowNormalMaterial = createFlowNormalMaterial()
-    flowNormalMaterial.uniforms.uHeightmap.value = targets.flowFbo.read.texture
+    const flowSurfaceMaterial = createFlowSurfaceMaterial()
+    flowSurfaceMaterial.uniforms.uHeightmap.value = targets.flowFbo.read.texture
+    flowSurfaceMaterial.uniforms.uMatcap.value = assets.matcap
 
     const mapDebugProgram = getMapDebugProgram()
 
@@ -70,7 +71,7 @@ export function useMaterials(targets: SceneTargets, assets: Assets) {
 
     return {
       flowMaterial,
-      flowNormalMaterial,
+      flowSurfaceMaterial,
       mapDebugProgram,
       raymarchMaterial,
       orbeFlowMaterial,

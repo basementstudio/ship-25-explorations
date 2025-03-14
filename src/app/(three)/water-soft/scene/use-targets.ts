@@ -9,7 +9,8 @@ export type SceneTargets = ReturnType<typeof useTargets>
 
 export function useTargets() {
   const flowFbo = useDoubleFBO(flowSize, flowSize, {
-    type: THREE.FloatType
+    type: THREE.FloatType,
+    magFilter: THREE.LinearFilter
     // minFilter: THREE.NearestFilter,
     // magFilter: THREE.NearestFilter
   })

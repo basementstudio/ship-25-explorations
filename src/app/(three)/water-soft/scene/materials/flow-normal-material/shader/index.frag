@@ -22,7 +22,7 @@ vec2 heightToNormal(vec2 uv, float tSize) {
   float dx = heightX - height;
   float dy = heightY - height;
 
-  vec2 normal = vec2(dx, dy) * 10.0;
+  vec2 normal = vec2(dx, dy);
   normal = normal * 0.5 + 0.5; // Map to range [0, 1]
 
   return normal;

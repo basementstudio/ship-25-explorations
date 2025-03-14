@@ -33,7 +33,7 @@ export function Scene() {
     flowMaterial,
     raymarchMaterial,
     updateFlowCamera,
-    flowNormalMaterial
+    flowSurfaceMaterial
   } = materials
 
   updateFlowCamera(activeCamera as THREE.PerspectiveCamera)
@@ -42,13 +42,13 @@ export function Scene() {
 
   // update environment
   useFrame(({ scene }) => {
-    return null //todo update env
+    // return null //todo update env
     const env = scene.environment
     if (!env) return
-    const currentEnv = raymarchMaterial.uniforms.envMap.value
+    const currentEnv = flowSurfaceMaterial.uniforms.envMap.value
     if (currentEnv !== env) {
-      raymarchMaterial.uniforms.envMap.value = env
-      const rotation = raymarchMaterial.uniforms.envMapRotation
+      flowSurfaceMaterial.uniforms.envMap.value = env
+      const rotation = flowSurfaceMaterial.uniforms.envMapRotation
         .value as THREE.Matrix3
 
       const _e1 = /*@__PURE__*/ new THREE.Euler()
@@ -100,26 +100,33 @@ export function Scene() {
 
   const flowScene = useMemo(() => new THREE.Scene(), [])
 
+  const currentFrame = useRef(0)
+
   // Update flow simulation
   useFrame(({ gl, scene, clock }, delta) => {
-    const t = clock.getElapsedTime()
+    currentFrame.current++
 
-    let s = Math.sin(t * 1) - 0.2
-    // s = Math.max(s, 0)
+    const oneEveryNFrames = currentFrame.current % 180 === 0
+    const s = oneEveryNFrames ? 1 : 0
 
-    if (s < 0) {
-      s = 0
-    } else {
-      s = 1
-    }
+    // const t = clock.getElapsedTime()
 
-    let triangleHeight = s * 0.4 + 0.5
+    // let s = Math.sin(t * 1) - 0.2
+    // // s = Math.max(s, 0)
+
+    // if (s < 0) {
+    //   s = 0
+    // } else {
+    //   s = 1
+    // }
+
+    let triangleHeight = s
 
     flowMaterial.uniforms.uTriangleHeight.value = triangleHeight
 
-    if (geoTryRef.current) {
-      geoTryRef.current.scale.y = (triangleHeight - 0.5) * 3
-    }
+    // if (geoTryRef.current) {
+    //   geoTryRef.current.scale.y = (triangleHeight - 0.5) * 3
+    // }
 
     const shouldDoubleRender = delta > 1 / 75
 
@@ -187,7 +194,7 @@ export function Scene() {
 
       <mesh ref={geoTryRef} position={[0, -0.4, 0]} scale={[0.44, 1, 0.44]}>
         <primitive object={assets.pyramid.geometry} />
-        <meshStandardMaterial color="red" metalness={1} />
+        <meshStandardMaterial color="black" metalness={1} />
       </mesh>
 
       {/* <mesh position={[0, 0.2, 0]} rotation={[-Math.PI / 2, 0, 0]}>
@@ -201,7 +208,7 @@ export function Scene() {
 
       <mesh rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[FLOW_SIM_SIZE, FLOW_SIM_SIZE]} />
-        <primitive object={flowNormalMaterial} />
+        <primitive object={flowSurfaceMaterial} />
       </mesh>
 
       <Cameras />

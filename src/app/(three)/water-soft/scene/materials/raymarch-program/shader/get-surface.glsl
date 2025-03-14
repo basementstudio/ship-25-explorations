@@ -30,7 +30,6 @@ vec3 getLight(vec3 p, vec3 reflectedNormal) {
 
 vec3 getEnv3(vec3 normal) {
   vec4 envColor = texture(envMap, envMapRotation * normal);
-
   return envColor.rgb;
 }
 

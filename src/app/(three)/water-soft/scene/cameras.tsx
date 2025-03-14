@@ -57,10 +57,10 @@ function CamerasInner() {
     <>
       <primitive
         object={mainCamera}
-        position={[0, 3, 0]}
+        position={[0, 3, 0.1]}
         fov={40}
         near={0.1}
-        far={3}
+        far={10}
         aspect={width / height}
       />
       <primitive
