@@ -8,7 +8,8 @@ export interface HeaderLink {
 }
 
 const navLinks: HeaderLink[] = [
-  { name: "raymarch", url: "/" },
+  { name: "home", url: "/" },
+  { name: "raymarch", url: "/raymarch" },
   { name: "fluid-solidify", url: "/fluid-solidify" },
   { name: "depth", url: "/depth" },
   { name: "pyramid", url: "/pyramid" },

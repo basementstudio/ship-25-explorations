@@ -1,15 +1,15 @@
 "use client"
 
-import { WebGL } from "~/gl/tunnel"
+import { OglDynamicCanvas } from "~/gl/components/dynamic-canvas"
 
 import { BackgroundGradient } from "./raymarch"
 
 export default function Home() {
   return (
     <main className="">
-      <WebGL.In>
+      <OglDynamicCanvas>
         <BackgroundGradient />
-      </WebGL.In>
+      </OglDynamicCanvas>
     </main>
   )
 }

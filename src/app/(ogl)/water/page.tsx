@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic"
 
-import { WebGL } from "~/gl/tunnel"
+import { OglDynamicCanvas } from "~/gl/components/dynamic-canvas"
 
 const Scene = dynamic(() => import("./scene").then((mod) => mod.Scene), {
   ssr: false
@@ -11,9 +11,9 @@ const Scene = dynamic(() => import("./scene").then((mod) => mod.Scene), {
 export default function Home() {
   return (
     <main className="">
-      <WebGL.In>
+      <OglDynamicCanvas>
         <Scene />
-      </WebGL.In>
+      </OglDynamicCanvas>
     </main>
   )
 }
