@@ -3,7 +3,7 @@
 import clsx from "clsx"
 
 import { useAppStore } from "~/context/use-app-store"
-import { WebGL } from "~/gl/tunnel"
+import { useGlobalMouseCallback } from "~/hooks/use-mouse-move"
 
 import { GLOBAL_GL, GLOBAL_RENDERER, MAIN_CAMERA } from ".."
 import { BasementCanvas } from "../basement-canvas"
@@ -11,10 +11,9 @@ import { useGlControls } from "../hooks/use-gl-controls"
 import { RenderLoop } from "../render-loop"
 import { DebugStateMessages } from "./devex/debug-messages"
 import { Helpers } from "./devex/helpers"
-import { useGlobalMouseCallback } from "~/hooks/use-mouse-move"
 
 /** Canvas with main scene */
-const PageCanvas = () => {
+const OglCanvas = ({ children }: { children: React.ReactNode }) => {
   const { hasRendered } = useGlControls()
   const isDebug = useAppStore((s) => s.isDebug)
 
@@ -51,7 +50,7 @@ const PageCanvas = () => {
 
           <RenderLoop />
 
-          <WebGL.Out />
+          {children}
 
           {isDebug && <Helpers />}
         </BasementCanvas>
@@ -60,4 +59,4 @@ const PageCanvas = () => {
   )
 }
 
-export default PageCanvas
+export default OglCanvas

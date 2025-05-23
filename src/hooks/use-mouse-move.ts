@@ -1,6 +1,8 @@
-import { subscribable } from "~/lib/subscribable";
-import { useStateToRef } from "./use-state-to-ref";
-import { useEffect } from "react";
+import { useEffect } from "react"
+
+import { subscribable } from "~/lib/subscribable"
+
+import { useStateToRef } from "./use-state-to-ref"
 
 type MouseMoveCallback = (e: PointerEvent) => void
 
@@ -11,16 +13,14 @@ export function useMouseMove(callback: MouseMoveCallback) {
 
   useEffect(() => {
     const cId = mouseMoveSubscribable.addCallback((e) => {
-      (callbackRef.current as MouseMoveCallback)(e)
+      ; (callbackRef.current as MouseMoveCallback)(e)
     })
 
     return () => {
       mouseMoveSubscribable.removeCallback(cId)
     }
   }, [])
-
 }
-
 
 /** This should be used only once in the entire app */
 export function useGlobalMouseCallback() {
@@ -28,9 +28,13 @@ export function useGlobalMouseCallback() {
     const controller = new AbortController()
     const signal = controller.signal
 
-    window.addEventListener("pointermove", (e) => {
-      mouseMoveSubscribable.runCallbacks(e)
-    }, { signal })
+    window.addEventListener(
+      "pointermove",
+      (e) => {
+        mouseMoveSubscribable.runCallbacks(e)
+      },
+      { signal }
+    )
 
     return () => {
       controller.abort()

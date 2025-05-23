@@ -11,8 +11,8 @@ import { HtmlOut } from "./gl/tunnel"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "ogl-starter | basement.studio",
-  description: "A minimalist's boilerplate — OGL with Next.js & TypeScript."
+  title: "Ship explorations | basement.studio",
+  description: "Vercel Ship 25 explorations."
 }
 
 export default function RootLayout({
