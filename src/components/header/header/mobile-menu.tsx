@@ -7,10 +7,10 @@ import React, { FC, useState } from "react"
 import { usePreventScroll } from "~/hooks/use-prevent-scroll"
 import { clx } from "~/lib/clx"
 
-import type { HeaderLink } from "."
+import type { Experiment } from "."
 
 interface MobileMenuProps {
-  links: HeaderLink[]
+  links: Experiment[]
 }
 
 const MobileMenu: FC<MobileMenuProps> = ({ links }) => {
@@ -48,9 +48,9 @@ const MobileMenu: FC<MobileMenuProps> = ({ links }) => {
           <div className="flex flex-col fixed inset-0 z-[100] bg-black">
             <nav className="flex items-center justify-center flex-[1_0_70%] md:flex">
               <ul className="flex flex-col items-center justify-center gap-4">
-                {links.map(({ name, url }) => (
+                {links.map(({ name, slug: url }) => (
                   <li key={name}>
-                    <Link href={url} onClick={closeMenu}>
+                    <Link href={`/${url}`} onClick={closeMenu}>
                       <span className="inline-block text-lg uppercase font-extralight scale-100 hover:scale-110 transition-transform duration-150 ease-in-out">
                         {name}
                       </span>

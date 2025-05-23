@@ -1,34 +1,7 @@
+import { experiments } from "~/app/experiments"
 import Link from "~/components/primitives/link"
 
 import MobileMenu from "./mobile-menu"
-
-export interface HeaderLink {
-  name: string
-  url: string
-}
-
-const navLinks: HeaderLink[] = [
-  { name: "home", url: "/" },
-  { name: "raymarch", url: "/raymarch" },
-  { name: "fluid-solidify", url: "/fluid-solidify" },
-  { name: "depth", url: "/depth" },
-  { name: "pyramid", url: "/pyramid" },
-  { name: "liquid", url: "/liquid" },
-  { name: "interaction", url: "/interaction" },
-  { name: "morph", url: "/morph" },
-  { name: "ferro", url: "/ferro" },
-  { name: "ferro-pyramid", url: "/ferro-pyramid" },
-  { name: "particles", url: "/particles" },
-  { name: "water", url: "/water" },
-  { name: "svg-displacement", url: "/svg-displacement" },
-  { name: "water-2", url: "/water-2" },
-  { name: "ferro-mesh", url: "/ferro-mesh" },
-  { name: "ferro-mesh-2", url: "/ferro-mesh-2" },
-  { name: "water-triangle", url: "/water-triangle" },
-  { name: "water-matcap", url: "/water-matcap" },
-  { name: "water-tilted-triangle", url: "/water-tilted-triangle" },
-  { name: "water-soft", url: "/water-soft" }
-].reverse()
 
 export const Header = () => {
   return (
@@ -54,7 +27,7 @@ export const Header = () => {
               </svg>
             </Link>
           </div>
-          <MobileMenu links={navLinks} />
+          <MobileMenu links={experiments} />
         </header>
       </div>
     </>
