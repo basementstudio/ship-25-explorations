@@ -4,10 +4,9 @@ import { Portal } from "@radix-ui/react-portal"
 import Link from "next/link"
 import React, { FC, useState } from "react"
 
+import type { Experiment } from "~/app/experiments"
 import { usePreventScroll } from "~/hooks/use-prevent-scroll"
 import { clx } from "~/lib/clx"
-
-import type { Experiment } from "."
 
 interface MobileMenuProps {
   links: Experiment[]
@@ -23,7 +22,7 @@ const MobileMenu: FC<MobileMenuProps> = ({ links }) => {
   return (
     <>
       <button
-        className={clx("w-11 h-11")}
+        className={clx("w-8 h-8")}
         onClick={isOpen ? closeMenu : openMenu}
       >
         <svg

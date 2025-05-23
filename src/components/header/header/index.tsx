@@ -9,7 +9,7 @@ export const Header = () => {
       <div className="sticky w-full top-0 p-0 bg-black/70 z-over-canvas">
         <header className="h-[4.5rem] px-6 flex items-center justify-between z-40 relative border-b border-[var(--color-gray-lighter)]">
           <div className="flex basis-[30%] flex-grow">
-            <Link href="/" className="w-6 h-6">
+            <Link href="/" className="w-5 h-5">
               <svg
                 className="h-full"
                 viewBox="0 0 250 250"
