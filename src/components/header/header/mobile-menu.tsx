@@ -44,9 +44,9 @@ const MobileMenu: FC<MobileMenuProps> = ({ links }) => {
       </button>
       {isOpen && (
         <Portal id="menu-modal">
-          <div className="flex flex-col fixed inset-0 z-[100] bg-black">
-            <nav className="flex items-center justify-center flex-[1_0_70%] md:flex">
-              <ul className="flex flex-col items-center justify-center gap-4">
+          <div className="flex flex-col fixed inset-0 z-[100] bg-black overflow-y-auto">
+            <nav className="flex-1 pt-20 pb-8 px-4">
+              <ul className="flex flex-col items-center gap-6 min-h-full justify-start">
                 {links.map(({ name, slug: url }) => (
                   <li key={name}>
                     <Link href={`/${url}`} onClick={closeMenu}>
