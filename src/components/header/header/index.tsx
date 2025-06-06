@@ -1,13 +1,14 @@
 import { experiments } from "~/app/experiments"
 import Link from "~/components/primitives/link"
 
+import { GithubLink } from "./github-link"
 import MobileMenu from "./mobile-menu"
 
 export const Header = () => {
   return (
     <>
       <div className="sticky w-full top-0 p-0 bg-black/70 z-over-canvas">
-        <header className="h-[4.5rem] px-6 flex items-center justify-between z-40 relative border-b border-[var(--color-gray-lighter)]">
+        <header className="h-[3rem] px-6 flex items-center justify-between z-40 relative border-b border-[var(--color-gray-lighter)]">
           <div className="flex basis-[30%] flex-grow">
             <Link href="/" className="w-5 h-5">
               <svg
@@ -27,7 +28,10 @@ export const Header = () => {
               </svg>
             </Link>
           </div>
-          <MobileMenu links={experiments} />
+          <div className="flex items-center gap-4">
+            <GithubLink />
+            <MobileMenu links={experiments} />
+          </div>
         </header>
       </div>
     </>
