@@ -5,17 +5,16 @@ import { Experiment } from "~/app/experiments"
 export function ExperimentBlock({ experiment }: { experiment: Experiment }) {
   return (
     <Link href={`/${experiment.slug}`}>
-      <div className="aspect-video relative  border-neutral-600 overflow-hidden">
+      <div className="relative flex flex-col gap-4 border-neutral-800 overflow-hidden rounded-md p-4 border hover:border-neutral-500 transition-all duration-200">
         <video
-          className="w-full h-full object-cover"
+          className="aspect-video relative w-full h-full object-cover rounded-md"
           src={`/previews/${experiment.slug}.mp4`}
           autoPlay
           muted
           loop
           playsInline
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
-        <h2 className="absolute bottom-0 left-0 right-0 p-4 text-white text-md font-mono tracking-tight">
+        <h2 className="text-white text-md font-mono tracking-tight leading-none">
           {experiment.name}
         </h2>
       </div>
