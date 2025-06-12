@@ -11,7 +11,11 @@ import { Grid } from "./grid"
 import { OrbitHelper } from "./orbit"
 import { Stats } from "./stats"
 
-const cameraOptions = ["main", "debug-orbit"] as const satisfies CameraName[]
+const cameraOptions = [
+  "main",
+  "debug-orbit",
+  "custom"
+] as const satisfies CameraName[]
 
 /** Adds all the scene helpers */
 export const Helpers = () => {

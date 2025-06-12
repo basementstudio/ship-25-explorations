@@ -1,5 +1,3 @@
-import { nanoid } from "nanoid"
-
 export interface Subscribable<T extends Function = () => void> {
   addCallback: (callback: T, id?: string) => string
   removeCallback: (id: string | T) => void
@@ -16,7 +14,7 @@ export const subscribable = <
   const callbacks: Record<string, T> = {}
 
   const addCallback = (callback: T, id: string): string => {
-    const _id = id || nanoid(4)
+    const _id = id || crypto.randomUUID()
     callbacks[_id] = callback
     return _id
   }

@@ -1,25 +1,16 @@
+import { experiments } from "~/app/experiments"
 import Link from "~/components/primitives/link"
 
+import { GithubLink } from "./github-link"
 import MobileMenu from "./mobile-menu"
-
-export interface HeaderLink {
-  name: string
-  url: string
-}
-
-const navLinks: HeaderLink[] = [
-  { name: "raymarch", url: "/" },
-  { name: "fluid-solidify", url: "/fluid-solidify" },
-  { name: "depth", url: "/depth" }
-]
 
 export const Header = () => {
   return (
     <>
       <div className="sticky w-full top-0 p-0 bg-black/70 z-over-canvas">
-        <header className="h-[4.5rem] px-6 flex items-center justify-between z-40 relative border-b border-[var(--color-gray-lighter)]">
+        <header className="h-[3rem] px-6 flex items-center justify-between z-40 relative border-b border-[var(--color-gray-lighter)]">
           <div className="flex basis-[30%] flex-grow">
-            <Link href="/" className="w-6 h-6">
+            <Link href="/" className="w-5 h-5">
               <svg
                 className="h-full"
                 viewBox="0 0 250 250"
@@ -37,17 +28,10 @@ export const Header = () => {
               </svg>
             </Link>
           </div>
-          <ul className="hidden md:flex items-center gap-[0.925rem]">
-            {navLinks.map(({ name, url }) => (
-              <li
-                key={name}
-                className="text-[max(16px,0.925vw)] font-light relative after:content-[''] after:absolute after:w-full after:scale-x-0 after:h-[1px] after:bottom-[-1px] after:left-0 after:bg-white after:origin-bottom-right after:transition-transform after:duration-150 after:ease-in-out hover:after:scale-x-100 hover:after:origin-bottom-left"
-              >
-                <Link href={url}>{name}</Link>
-              </li>
-            ))}
-          </ul>
-          <MobileMenu links={navLinks} />
+          <div className="flex items-center gap-4">
+            <GithubLink />
+            <MobileMenu links={experiments} />
+          </div>
         </header>
       </div>
     </>

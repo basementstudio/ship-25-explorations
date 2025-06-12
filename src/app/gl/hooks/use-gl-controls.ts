@@ -6,7 +6,7 @@ import { create } from "zustand"
 import { GLOBAL_GL, GLOBAL_RENDERER } from ".."
 import { DEFAULT_CLEAR_COLOR } from "../constants"
 
-export type CameraName = "main" | "debug-orbit"
+export type CameraName = "main" | "debug-orbit" | "custom"
 
 export interface GlControls {
   renderer: Renderer
