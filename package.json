@@ -68,7 +68,7 @@
     "input-otp": "1.4.1",
     "its-fine": "^1.2.5",
     "leva": "0.9.28",
-    "lodash-es": "^4.17.21",
+    "lodash-es": "^4.17.23",
     "lucide-react": "^0.454.0",
     "motion": "^11.18.0",
     "mousetrap": "^1.6.5",
